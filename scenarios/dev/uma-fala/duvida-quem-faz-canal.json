@@ -1,0 +1,27 @@
+{
+  "id": "duvida-quem-faz-canal",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Quem faz tratamento de canal aí?"
+    ],
+    "dificil": [
+      "qm faz canal"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "carla"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "duvida-convenio-nao-aceito",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Vocês atendem pelo Unimed Odonto?"
+    ],
+    "dificil": [
+      "unimed odonto pega ai?"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "nao"
+      ]
+    ]
+  }
+}

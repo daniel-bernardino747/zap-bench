@@ -1,0 +1,47 @@
+{
+  "id": "conversa-remarcar-entre-dois",
+  "tarefa": "remarcar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Carlos Oliveira",
+  "agenda": [
+    {
+      "paciente": "eu",
+      "servico": "limpeza",
+      "data": "2026-09-30",
+      "hora": "10:00"
+    },
+    {
+      "paciente": "eu",
+      "servico": "restauracao",
+      "data": "2026-10-02",
+      "hora": "14:00"
+    }
+  ],
+  "persona": {
+    "objetivo": "passar a restauração de sexta para segunda-feira de manhã, sem mexer na limpeza",
+    "sabe": [
+      "tem dois agendamentos: uma limpeza e uma restauração",
+      "não lembra o dia exato da restauração, chama de 'a do dente'",
+      "segunda de manhã, antes do meio-dia"
+    ],
+    "abertura": {
+      "padrao": "Oi, preciso remarcar minha consulta do dente.",
+      "dificil": "preciso mudar aquela do dente"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "limpeza",
+        "data": "2026-09-30",
+        "hora": "10:00"
+      },
+      {
+        "servico": "restauracao",
+        "data": "2026-10-05",
+        "hora_antes_de": "12:00"
+      }
+    ]
+  }
+}

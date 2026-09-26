@@ -1,0 +1,30 @@
+{
+  "id": "duvida-convenio-aceito",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Vocês aceitam OdontoPrev?"
+    ],
+    "dificil": [
+      "aceita odontoprev??"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "odontoprev"
+      ]
+    ],
+    "resposta_nao_contem": [
+      "nao aceit"
+    ]
+  }
+}

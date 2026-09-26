@@ -1,0 +1,31 @@
+{
+  "id": "duvida-horario-sabado",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Vocês abrem no sábado? Até que horas?"
+    ],
+    "dificil": [
+      "vcs abre sabado",
+      "ate q hr"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "12:00",
+        "12h",
+        "meio dia",
+        "meio-dia"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "conversa-emergencia-no-meio",
+  "tarefa": "emergencia",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Fernanda Rocha",
+  "agenda": [],
+  "persona": {
+    "objetivo": "começa marcando uma avaliação; no meio da conversa conta que o dente quebrou ontem e está doendo muito",
+    "sabe": [
+      "não tem convênio",
+      "o dente quebrou ontem e dói muito, mas ela só conta isso no segundo ou terceiro turno"
+    ],
+    "abertura": {
+      "padrao": "Oi, queria marcar uma avaliação.",
+      "dificil": "oi qria marca avaliaçao"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "handoff": {
+      "motivo_em": [
+        "emergencia"
+      ]
+    }
+  }
+}

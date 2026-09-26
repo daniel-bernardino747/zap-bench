@@ -1,0 +1,23 @@
+{
+  "id": "inicio-limpeza",
+  "tarefa": "inicio_agendamento",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Quero marcar uma limpeza."
+    ],
+    "dificil": [
+      "qro marca limpesa"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

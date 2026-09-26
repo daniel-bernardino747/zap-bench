@@ -1,0 +1,28 @@
+{
+  "id": "inicio-avaliacao-amanha",
+  "tarefa": "inicio_agendamento",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Tem horário pra avaliação amanhã de manhã?"
+    ],
+    "dificil": [
+      "tem horario p avaliaçao amanha d manha"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "buscar_horarios"
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

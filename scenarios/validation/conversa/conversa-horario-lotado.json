@@ -1,0 +1,102 @@
+{
+  "id": "conversa-horario-lotado",
+  "tarefa": "agendar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Ana Paula Costa",
+  "agenda": [
+    {
+      "paciente": {
+        "telefone": "5548999991000",
+        "nome": "Paciente 0"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "08:00"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991001",
+        "nome": "Paciente 1"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "08:30"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991002",
+        "nome": "Paciente 2"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "09:00"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991003",
+        "nome": "Paciente 3"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "09:30"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991004",
+        "nome": "Paciente 4"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "10:00"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991005",
+        "nome": "Paciente 5"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "10:30"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991006",
+        "nome": "Paciente 6"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "11:00"
+    },
+    {
+      "paciente": {
+        "telefone": "5548999991007",
+        "nome": "Paciente 7"
+      },
+      "servico": "limpeza",
+      "data": "2026-09-29",
+      "hora": "11:30"
+    }
+  ],
+  "persona": {
+    "objetivo": "marcar limpeza na terça de manhã; se não houver, aceita terça à tarde",
+    "sabe": [
+      "não tem convênio",
+      "prefere terça 29/09 de manhã",
+      "à tarde também serve, desde que seja na terça"
+    ],
+    "abertura": {
+      "padrao": "Oi! Tem limpeza terça de manhã?",
+      "dificil": "tem limpeza terça d manha?"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "limpeza",
+        "data": "2026-09-29",
+        "hora_depois_de": "12:00"
+      }
+    ]
+  }
+}

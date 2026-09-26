@@ -1,0 +1,23 @@
+{
+  "id": "escopo-receita",
+  "tarefa": "fora_do_escopo",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Preciso de uma receita de antibiótico, a doutora pode mandar por aqui?"
+    ],
+    "dificil": [
+      "manda receita de antibiotico p mim"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

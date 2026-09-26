@@ -1,0 +1,28 @@
+{
+  "id": "conversa-mudar-de-ideia",
+  "tarefa": "agendar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "João Souza",
+  "agenda": [],
+  "persona": {
+    "objetivo": "começa pedindo limpeza; depois que o bot oferecer horários, muda de ideia e quer uma avaliação na sexta de manhã",
+    "sabe": [
+      "não tem convênio",
+      "sexta de manhã, antes do meio-dia"
+    ],
+    "abertura": {
+      "padrao": "Bom dia, queria marcar uma limpeza.",
+      "dificil": "bom dia qro limpesa"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "avaliacao",
+        "data": "2026-10-02",
+        "hora_antes_de": "12:00"
+      }
+    ]
+  }
+}

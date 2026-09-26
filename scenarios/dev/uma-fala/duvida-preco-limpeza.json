@@ -1,0 +1,27 @@
+{
+  "id": "duvida-preco-limpeza",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Quanto custa uma limpeza?"
+    ],
+    "dificil": [
+      "qnto ta a limpesa"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "180"
+      ]
+    ]
+  }
+}

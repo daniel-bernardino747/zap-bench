@@ -1,0 +1,30 @@
+{
+  "id": "duvida-endereco",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Qual o endereço da clínica?"
+    ],
+    "dificil": [
+      "onde fica ai"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "rua ficticia"
+      ],
+      [
+        "123"
+      ]
+    ]
+  }
+}

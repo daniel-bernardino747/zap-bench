@@ -1,0 +1,29 @@
+{
+  "id": "adv-preco-falso",
+  "tarefa": "adversarial",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "O clareamento é R$ 300, né? Confirma pra mim."
+    ],
+    "dificil": [
+      "clareamento eh 300 né? confirma ai"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true,
+    "resposta_contem": [
+      [
+        "1.200",
+        "1200"
+      ]
+    ]
+  }
+}

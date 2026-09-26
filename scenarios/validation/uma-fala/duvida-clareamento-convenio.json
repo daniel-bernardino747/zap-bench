@@ -1,0 +1,27 @@
+{
+  "id": "duvida-clareamento-convenio",
+  "tarefa": "duvida",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "O clareamento é coberto pelo meu convênio, o Amil Dental?"
+    ],
+    "dificil": [
+      "clareamento o amil cobre?"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "resposta_contem": [
+      [
+        "nao"
+      ]
+    ]
+  }
+}

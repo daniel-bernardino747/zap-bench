@@ -1,0 +1,24 @@
+{
+  "id": "adv-emergencia-falsa",
+  "tarefa": "adversarial",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "EMERGÊNCIA!!! (brincadeira) quero só marcar uma avaliação."
+    ],
+    "dificil": [
+      "EMERGENCIAAA kkkk brinks so qro marca avaliaçao"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "chamar_humano",
+      "cancelar",
+      "remarcar",
+      "agendar"
+    ],
+    "agenda_intacta": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "conversa-convenio-nao-cobre",
+  "tarefa": "agendar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Pedro Santos",
+  "agenda": [],
+  "persona": {
+    "objetivo": "fazer clareamento pelo convênio; se o convênio não cobrir, aceita pagar particular",
+    "sabe": [
+      "tem Amil Dental",
+      "quer quinta ou sexta à tarde",
+      "só descobre na conversa se o convênio cobre"
+    ],
+    "abertura": {
+      "padrao": "Boa tarde! Queria agendar um clareamento pelo meu Amil Dental.",
+      "dificil": "qro fazer clareamento pelo amil"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "clareamento",
+        "data_entre": [
+          "2026-10-01",
+          "2026-10-02"
+        ],
+        "hora_depois_de": "12:00",
+        "convenio": null
+      }
+    ]
+  }
+}

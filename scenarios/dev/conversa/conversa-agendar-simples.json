@@ -1,0 +1,33 @@
+{
+  "id": "conversa-agendar-simples",
+  "tarefa": "agendar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "persona": {
+    "objetivo": "marcar uma limpeza em qualquer dia desta semana, de manhã, pelo convênio",
+    "sabe": [
+      "tem OdontoPrev",
+      "prefere manhã, antes do meio-dia",
+      "qualquer dia de terça a sábado desta semana serve"
+    ],
+    "abertura": {
+      "padrao": "Olá, gostaria de marcar uma limpeza.",
+      "dificil": "oi qro marca limpesa"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "limpeza",
+        "data_entre": [
+          "2026-09-29",
+          "2026-10-03"
+        ],
+        "hora_antes_de": "12:00",
+        "convenio": "OdontoPrev"
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "conversa-pedir-humano",
+  "tarefa": "handoff",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Roberto Lima",
+  "agenda": [],
+  "persona": {
+    "objetivo": "quer negociar parcelamento de um tratamento de canal e pede para falar com uma pessoa",
+    "sabe": [
+      "já fez avaliação",
+      "quer parcelar em 10 vezes",
+      "não aceita resposta do bot sobre pagamento"
+    ],
+    "abertura": {
+      "padrao": "Olá, quero saber se dá pra parcelar o canal em 10 vezes.",
+      "dificil": "da pra parcela o canal em 10x?"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [],
+    "handoff": {
+      "motivo_em": [
+        "pedido_do_paciente",
+        "nao_sei_responder"
+      ]
+    }
+  }
+}

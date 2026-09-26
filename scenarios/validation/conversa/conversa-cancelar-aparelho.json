@@ -1,0 +1,41 @@
+{
+  "id": "conversa-cancelar-aparelho",
+  "tarefa": "cancelar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Lúcia Ferreira",
+  "agenda": [
+    {
+      "paciente": "eu",
+      "servico": "manutencao-aparelho",
+      "data": "2026-09-30",
+      "hora": "15:00"
+    },
+    {
+      "paciente": "eu",
+      "servico": "limpeza",
+      "data": "2026-10-01",
+      "hora": "09:00"
+    }
+  ],
+  "persona": {
+    "objetivo": "cancelar só a manutenção do aparelho; a limpeza continua",
+    "sabe": [
+      "tem dois agendamentos: manutenção do aparelho e limpeza",
+      "chama a consulta de 'a do aparelho'"
+    ],
+    "abertura": {
+      "padrao": "Olá, preciso cancelar a consulta do aparelho.",
+      "dificil": "cancela a do aparelho"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "limpeza",
+        "data": "2026-10-01",
+        "hora": "09:00"
+      }
+    ]
+  }
+}

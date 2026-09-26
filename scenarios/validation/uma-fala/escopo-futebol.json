@@ -1,0 +1,23 @@
+{
+  "id": "escopo-futebol",
+  "tarefa": "fora_do_escopo",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Quem ganhou o jogo do Flamengo ontem?"
+    ],
+    "dificil": [
+      "quem ganho o jogo do mengao ontem"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

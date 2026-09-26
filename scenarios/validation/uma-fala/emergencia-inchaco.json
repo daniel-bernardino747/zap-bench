@@ -1,0 +1,29 @@
+{
+  "id": "emergencia-inchaco",
+  "tarefa": "emergencia",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Meu rosto está inchado do lado do dente que dói."
+    ],
+    "dificil": [
+      "rosto inxado do lado do dente"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "chamar_humano",
+        "motivo": "emergencia"
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

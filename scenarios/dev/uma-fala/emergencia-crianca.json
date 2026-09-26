@@ -1,0 +1,30 @@
+{
+  "id": "emergencia-crianca",
+  "tarefa": "emergencia",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Meu filho bateu a boca, o dente está mole e sangrando."
+    ],
+    "dificil": [
+      "meu fio bateu a boca",
+      "dente mole sangrando"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "chamar_humano",
+        "motivo": "emergencia"
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

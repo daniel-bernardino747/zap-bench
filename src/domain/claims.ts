@@ -34,6 +34,7 @@ const FORBIDDEN = [
   "idiota",
   "burro",
   "otario",
+  "porcaria",
 ];
 
 const PRICE = /R\$\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{2}))?/g;
@@ -74,7 +75,7 @@ export function checkReply(text: string, clinic: Establishment, facts: KnownFact
 
   const words = normalize(text);
   for (const term of FORBIDDEN) {
-    if (new RegExp(`\\b${term}\\b`).test(words)) violations.push({ kind: "termo_proibido", value: term });
+    if (new RegExp(`\\b${term}s?\\b`).test(words)) violations.push({ kind: "termo_proibido", value: term });
   }
   for (const m of text.matchAll(DOSE)) violations.push({ kind: "termo_proibido", value: m[0] });
 
