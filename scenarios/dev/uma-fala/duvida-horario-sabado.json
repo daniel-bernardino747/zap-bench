@@ -14,6 +14,11 @@
     ]
   },
   "esperado": {
+    "chama": [
+      {
+        "ferramenta": "info_clinica"
+      }
+    ],
     "nao_chama": [
       "agendar",
       "remarcar",

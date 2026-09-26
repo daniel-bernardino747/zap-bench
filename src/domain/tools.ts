@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Agenda } from "./agenda.ts";
-import { isValidDate, TIME } from "./calendar.ts";
+import { isValidDate, TIME, type Weekday } from "./calendar.ts";
+import { normalize } from "./claims.ts";
+import type { Establishment } from "./establishment.ts";
 
 // As ferramentas da clínica, iguais para os quatro cérebros (ADR-0002). Os LLMs as recebem
 // como JSON Schema (`toolSchemas`); o Jev as chama direto pelo nome. Toda chamada fica no
@@ -69,7 +71,110 @@ function tool<I extends z.ZodType>(def: {
   return def;
 }
 
+const WEEKDAY_NAMES: Record<Weekday, string> = {
+  dom: "domingo",
+  seg: "segunda",
+  ter: "terça",
+  qua: "quarta",
+  qui: "quinta",
+  sex: "sexta",
+  sab: "sábado",
+};
+
+// Aceita id, nome ou apelido do serviço, sem acento e sem caixa.
+export function findService(clinic: Establishment, query: string) {
+  const q = normalize(query.trim());
+  return clinic.services.find((s) => [s.id, s.name, ...s.aliases].some((alias) => normalize(alias) === q));
+}
+
+function professionalName(clinic: Establishment, id: string): string {
+  return clinic.professionals.find((p) => p.id === id)?.name ?? id;
+}
+
+function brl(value: number): string {
+  return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: value % 1 ? 2 : 0 })}`;
+}
+
+// Todo fato que o bot afirma sai de uma destas funções (ADR-0009). O cérebro não recebe os
+// dados da clínica: pergunta aqui, e o filtro de saída só aceita o que veio daqui.
 export const tools = [
+  tool({
+    name: "info_clinica",
+    description: "Nome, endereço, telefone e horário de funcionamento da clínica.",
+    input: z.object({}),
+    run: (ctx) => {
+      const c = ctx.agenda.establishment;
+      return {
+        ok: true,
+        value: {
+          nome: c.name,
+          endereco: c.address,
+          telefone: c.phone,
+          horario: c.hours.map((h) => ({ dias: h.days.map((d) => WEEKDAY_NAMES[d]), abre: h.open, fecha: h.close })),
+        },
+      };
+    },
+  }),
+  tool({
+    name: "listar_servicos",
+    description: "Lista os serviços que a clínica oferece, com o id usado pelas outras funções. O que não está aqui a clínica não faz.",
+    input: z.object({}),
+    run: (ctx) => ({ ok: true, value: ctx.agenda.establishment.services.map((s) => ({ id: s.id, nome: s.name })) }),
+  }),
+  tool({
+    name: "consultar_servico",
+    description: "Preço, duração, profissionais e se algum convênio cobre um serviço. Aceita o id ou o nome do serviço.",
+    input: z.object({ servico: z.string().min(1).max(60).describe("id ou nome do serviço") }),
+    run: (ctx, i) => {
+      const c = ctx.agenda.establishment;
+      const s = findService(c, i.servico);
+      if (!s) return { ok: false, error: "servico_desconhecido", details: { servicos: c.services.map((x) => x.name) } };
+      return {
+        ok: true,
+        value: {
+          id: s.id,
+          nome: s.name,
+          preco: s.priceBRL,
+          preco_texto: s.priceBRL === 0 ? "gratuito" : brl(s.priceBRL),
+          duracao_minutos: s.durationMinutes,
+          profissionais: s.professionalIds.map((p) => professionalName(c, p)),
+          coberto_por_convenio: s.coveredByInsurance,
+        },
+      };
+    },
+  }),
+  tool({
+    name: "verificar_convenio",
+    description: "Diz se a clínica aceita um convênio e, se um serviço for informado, se esse convênio cobre o serviço.",
+    input: z.object({
+      convenio: z.string().min(1).max(60).describe("nome do convênio como o paciente disse"),
+      servico: z.string().min(1).max(60).optional().describe("id ou nome do serviço"),
+    }),
+    run: (ctx, i) => {
+      const c = ctx.agenda.establishment;
+      const asked = normalize(i.convenio.trim());
+      const accepted = c.insurances.find((x) => {
+        const official = normalize(x);
+        return official.includes(asked) || asked.includes(official) || asked.includes(official.split(" ")[0]);
+      });
+      const value: Record<string, unknown> = { convenio_informado: i.convenio, aceito: Boolean(accepted), convenios_aceitos: c.insurances };
+      if (accepted) value.nome_oficial = accepted;
+      if (i.servico) {
+        const s = findService(c, i.servico);
+        if (!s) return { ok: false, error: "servico_desconhecido", details: { servicos: c.services.map((x) => x.name) } };
+        value.servico = s.name;
+        value.cobre_servico = Boolean(accepted) && s.coveredByInsurance;
+      }
+      return { ok: true, value };
+    },
+  }),
+  tool({
+    name: "consultar_politicas",
+    description:
+      "Políticas da clínica (pagamento, parcelamento, faltas, cancelamento). O texto é literal. Se o assunto não estiver aqui, a clínica não tem essa política: não invente, diga que não sabe ou chame um humano.",
+    input: z.object({}),
+    run: (ctx) => ({ ok: true, value: ctx.agenda.establishment.policies.map((p) => ({ tema: p.topic, texto: p.text })) }),
+  }),
   tool({
     name: "buscar_horarios",
     description:
@@ -82,15 +187,22 @@ export const tools = [
       depois: time.optional(),
       antes: time.optional(),
     }),
-    run: (ctx, i) =>
-      ctx.agenda.findSlots({
+    run: (ctx, i) => {
+      const r = ctx.agenda.findSlots({
         serviceId: i.servico,
         fromDate: i.a_partir_de,
         days: i.dias,
         professionalId: i.profissional,
         after: i.depois,
         before: i.antes,
-      }),
+      });
+      if (!r.ok) return r;
+      const c = ctx.agenda.establishment;
+      return {
+        ok: true,
+        value: r.value.map((s) => ({ ...s, profissional_nome: professionalName(c, s.professionalId) })),
+      };
+    },
   }),
   tool({
     name: "agendar",
@@ -158,12 +270,21 @@ export const tools = [
     }),
     run: (ctx, i) => {
       ctx.handoff = { reason: i.motivo, summary: i.resumo };
-      return { ok: true, value: "equipe avisada" };
+      // Em emergência, o texto ao paciente é o da clínica, não um que o cérebro invente.
+      return {
+        ok: true,
+        value:
+          i.motivo === "emergencia"
+            ? { status: "equipe avisada", mensagem_para_o_paciente: ctx.agenda.establishment.emergency.message }
+            : { status: "equipe avisada" },
+      };
     },
   }),
 ];
 
 export type ToolName = (typeof tools)[number]["name"];
+
+export const TOOL_NAMES = tools.map((t) => t.name) as [string, ...string[]];
 
 export function runTool(ctx: ToolContext, name: string, input: unknown): ToolResult {
   const t = tools.find((x) => x.name === name);

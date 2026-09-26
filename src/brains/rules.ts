@@ -1,17 +1,24 @@
 import { addDays, weekdayOf } from "../domain/calendar.ts";
-import type { Slot } from "../domain/agenda.ts";
 import { normalize } from "../domain/claims.ts";
-import type { Establishment } from "../domain/establishment.ts";
+import type { ToolResult } from "../domain/tools.ts";
 import { isAffirmative } from "../domain/guardrails.ts";
 import { NO_USAGE, type Brain, type BrainReply } from "./types.ts";
 
 // Cérebro falso, por regras e sem IA. Existe para rodar o executor sem chave e testar o
-// encanamento. Não entra na comparação publicada.
+// encanamento; não entra na comparação publicada. Como os outros, só sabe o que as funções
+// devolvem (ADR-0009).
 
 const WEEKDAY: Record<string, string> = { dom: "domingo", seg: "segunda", ter: "terça", qua: "quarta", qui: "quinta", sex: "sexta", sab: "sábado" };
+const EMERGENCY = /\b(sangr\w*|inch\w*|inxad\w*|quebr\w*|dor forte|doi muito|socorro|trauma)\b/;
 
-function findService(clinic: Establishment, text: string) {
-  return clinic.services.find((s) => [s.id, s.name, ...s.aliases].some((alias) => text.includes(normalize(alias))));
+interface Slot {
+  date: string;
+  time: string;
+  professionalId: string;
+}
+
+function value<T>(r: ToolResult): T | null {
+  return r.ok ? (r.value as T) : null;
 }
 
 function describe(slot: Slot): string {
@@ -25,16 +32,22 @@ export const rulesBrain: Brain = {
   model: "regras",
   start(ctx) {
     let offer: { serviceId: string; serviceName: string; slot: Slot } | null = null;
-    const emergency = ctx.clinic.emergency.keywords.map(normalize);
     const say = (...replies: string[]): BrainReply => ({ replies, usage: NO_USAGE });
+
+    const findService = (t: string) => {
+      const services = value<{ id: string; nome: string }[]>(ctx.callTool("listar_servicos", {})) ?? [];
+      return services.find((s) => t.includes(normalize(s.nome.split(" (")[0])) || t.includes(normalize(s.id)));
+    };
 
     return {
       async respond(patientText) {
         const t = normalize(patientText);
 
-        if (emergency.some((k) => t.includes(k)) || /\b(sangr\w*|inch\w*|inxad\w*|quebr\w*)\b/.test(t)) {
-          ctx.callTool("chamar_humano", { motivo: "emergencia", resumo: "Paciente relatou possível urgência odontológica." });
-          return say(ctx.clinic.emergency.message);
+        if (EMERGENCY.test(t)) {
+          const r = value<{ mensagem_para_o_paciente?: string }>(
+            ctx.callTool("chamar_humano", { motivo: "emergencia", resumo: "Paciente relatou possível urgência odontológica." }),
+          );
+          return say(r?.mensagem_para_o_paciente ?? "Vou chamar alguém da equipe agora.");
         }
         if (/\b(atendente|humano|pessoa|reclama\w*)\b/.test(t)) {
           ctx.callTool("chamar_humano", { motivo: "pedido_do_paciente", resumo: "Paciente pediu para falar com um atendente." });
@@ -45,31 +58,31 @@ export const rulesBrain: Brain = {
         }
 
         if (offer && isAffirmative(patientText)) {
-          const r = ctx.callTool("agendar", {
-            nome_paciente: "Paciente",
-            servico: offer.serviceId,
-            data: offer.slot.date,
-            hora: offer.slot.time,
-            profissional: offer.slot.professionalId,
-          });
           const done = offer;
           offer = null;
+          const r = ctx.callTool("agendar", {
+            nome_paciente: "Paciente",
+            servico: done.serviceId,
+            data: done.slot.date,
+            hora: done.slot.time,
+            profissional: done.slot.professionalId,
+          });
           return r.ok
             ? say(`Pronto! ${done.serviceName} agendada para ${describe(done.slot)}.`)
             : say("Esse horário não está mais disponível. Quer que eu procure outro?");
         }
 
-        const service = findService(ctx.clinic, t);
+        const service = findService(t);
         if (service && /\b(quanto|preco|valor|custa)\b/.test(t)) {
-          return say(`${service.name}: R$ ${service.priceBRL}.`);
+          const info = value<{ nome: string; preco_texto: string }>(ctx.callTool("consultar_servico", { servico: service.id }));
+          return say(info ? `${info.nome}: ${info.preco_texto}.` : "Não encontrei esse serviço.");
         }
         if (service && /\b(marc\w*|agend\w*|horario|tem|qro|quero)\b/.test(t)) {
           const from = t.includes("amanha") ? addDays(ctx.now.date, 1) : ctx.now.date;
-          const r = ctx.callTool("buscar_horarios", { servico: service.id, a_partir_de: from, dias: 7 });
-          const slots = r.ok ? (r.value as Slot[]) : [];
-          if (!slots.length) return say(`Não encontrei horário para ${service.name} nos próximos dias.`);
-          offer = { serviceId: service.id, serviceName: service.name, slot: slots[0] };
-          return say(`Posso marcar ${service.name} na ${describe(slots[0])}?`);
+          const slots = value<Slot[]>(ctx.callTool("buscar_horarios", { servico: service.id, a_partir_de: from, dias: 7 })) ?? [];
+          if (!slots.length) return say(`Não encontrei horário para ${service.nome} nos próximos dias.`);
+          offer = { serviceId: service.id, serviceName: service.nome, slot: slots[0] };
+          return say(`Posso marcar ${service.nome} para ${describe(slots[0])}?`);
         }
 
         return say("Posso ajudar a agendar uma consulta ou chamar alguém da equipe. O que você precisa?");

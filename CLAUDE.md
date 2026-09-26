@@ -18,6 +18,7 @@ Compara bots de atendimento de WhatsApp para uma clínica: Claude Sonnet 5, Clau
 
 ## Regras
 
+- Todo fato e toda ação saem de uma função (ADR-0009). Cérebro nenhum recebe os dados da clínica; o filtro só aceita preço, horário, profissional, convênio e política que vieram de uma função nesta conversa. Nova informação da clínica vira campo no `establishment.json` e função de consulta em `tools.ts`, nunca texto no prompt.
 - Paciente simulado e juiz nunca usam um modelo Claude ou GPT; toda execução grava o id do modelo que fez esses papéis (ADR-0003).
 - Um cérebro sem chave no `.env` é pulado com aviso, sem derrubar a rodada.
 - O Node roda o TypeScript só removendo tipos (`erasableSyntaxOnly`): sem parameter properties, enums ou namespaces.

@@ -1,10 +1,10 @@
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { Agenda } from "./agenda.ts";
-import { checkReply, extractTimes } from "./claims.ts";
+import { checkReply, extractTimes, factsFrom, type KnownFacts } from "./claims.ts";
 import { loadEstablishment, type Establishment } from "./establishment.ts";
 import { ConversationGuard, isAffirmative, SAFE_REPLY, type Mode } from "./guardrails.ts";
-import { createToolContext } from "./tools.ts";
+import { createToolContext, runTool } from "./tools.ts";
 
 let clinic: Establishment;
 beforeAll(async () => {
@@ -20,36 +20,69 @@ function guard(mode: Mode) {
 
 const booking = { nome_paciente: "Maria", servico: "limpeza", data: "2026-09-29", hora: "10:00" };
 
+const NOTHING: KnownFacts = { times: [], prices: [], names: [], texts: [], policiesConsulted: false, actionsThisTurn: [] };
+const vocab = () => ({ insurances: clinic.insurances });
+
+// Fatos como o guard monta: o que as funções devolveram nesta conversa.
+function factsAfter(calls: [string, object][], extra: Partial<KnownFacts> = {}): KnownFacts {
+  const ctx = createToolContext(new Agenda(clinic, { date: "2026-09-28", time: "09:10" }), "5548999990001");
+  const results = calls.map(([name, input]) => runTool(ctx, name, input)).filter((r) => r.ok).map((r) => (r as { value: unknown }).value);
+  return { ...NOTHING, ...factsFrom(results), policiesConsulted: calls.some(([n]) => n === "consultar_politicas"), ...extra };
+}
+
 describe("afirmações da resposta", () => {
   it("lê horários em vários formatos", () => {
     expect(extractTimes("às 10h, 10h30, 9:00 ou 14:30")).toEqual(["10:00", "10:30", "09:00", "14:30"]);
   });
 
-  it("acusa preço, profissional e horário que não existem, e termo proibido", () => {
-    const v = checkReply(
-      "O clareamento sai R$ 300,00 com a Dra. Fernanda às 19:00. Tome ibuprofeno 600 mg.",
-      clinic,
-      { times: [] },
-    );
+  it("sem ter consultado nada, nenhum fato pode ser citado, nem os que existem na clínica", () => {
+    const v = checkReply("A limpeza é R$ 180 com a Dra. Ana às 10:00. Aceitamos Amil.", NOTHING, vocab());
+    expect(v).toEqual([
+      { kind: "preco", value: "R$ 180" },
+      { kind: "profissional", value: "Dra. Ana" },
+      { kind: "horario", value: "10:00" },
+      { kind: "convenio", value: "Amil Dental" },
+    ]);
+  });
+
+  it("aceita o que veio das funções: serviço, convênio, clínica, horários", () => {
+    const facts = factsAfter([
+      ["consultar_servico", { servico: "limpeza" }],
+      ["consultar_servico", { servico: "canal" }],
+      ["verificar_convenio", { convenio: "amil", servico: "limpeza" }],
+      ["info_clinica", {}],
+      ["buscar_horarios", { servico: "limpeza", a_partir_de: "2026-09-29", dias: 1, depois: "10:30", antes: "11:00" }],
+    ]);
+    expect(
+      checkReply(
+        "Limpeza é R$ 180 e canal R$ 900,00, com a Dra. Ana ou a Dra. Carla. O Amil cobre. Abrimos 08:00 e temos 10h30.",
+        facts,
+        vocab(),
+      ),
+    ).toEqual([]);
+  });
+
+  it("acusa preço e profissional que não vieram de função, e termo proibido", () => {
+    const v = checkReply("O clareamento sai R$ 300,00 com a Dra. Fernanda. Tome ibuprofeno 600 mg.", factsAfter([["consultar_servico", { servico: "clareamento" }]]), vocab());
     expect(v).toEqual([
       { kind: "preco", value: "R$ 300,00" },
       { kind: "profissional", value: "Dra. Fernanda" },
-      { kind: "horario", value: "19:00" },
       { kind: "termo_proibido", value: "ibuprofeno" },
       { kind: "termo_proibido", value: "600 mg" },
     ]);
   });
 
-  it("aceita valor citado numa política da clínica", () => {
-    expect(checkReply("Acima de R$ 500 dá para parcelar em 3x.", clinic, { times: [] })).toEqual([]);
+  it("política só pode ser citada depois de consultada, e aí o valor dela vale", () => {
+    const text = "Acima de R$ 500 dá para parcelar em 3x.";
+    expect(checkReply(text, NOTHING, vocab()).map((v) => v.kind)).toEqual(["preco", "politica"]);
+    expect(checkReply(text, factsAfter([["consultar_politicas", {}]]), vocab())).toEqual([]);
   });
 
-  it("aceita o que está na configuração ou já apareceu na conversa", () => {
-    expect(
-      checkReply("Limpeza é R$ 180 e canal R$ 900,00, com a Dra. Ana ou o Dr. Bruno. Abrimos 08:00 e temos 10h30.", clinic, {
-        times: ["10:30"],
-      }),
-    ).toEqual([]);
+  it("ação dita como feita exige a função com sucesso neste turno; negação não conta", () => {
+    expect(checkReply("Pronto, sua consulta foi cancelada.", NOTHING, vocab())).toEqual([{ kind: "acao_nao_executada", value: "cancelada" }]);
+    expect(checkReply("Pronto, cancelada.", { ...NOTHING, actionsThisTurn: ["cancelar"] }, vocab())).toEqual([]);
+    expect(checkReply("Não encontrei, então nada foi cancelado.", NOTHING, vocab())).toEqual([]);
+    expect(checkReply("Sua consulta não foi cancelada.", NOTHING, vocab())).toEqual([]);
   });
 });
 

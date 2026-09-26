@@ -1,5 +1,5 @@
 import { addDays, weekdayOf } from "./calendar.ts";
-import { checkReply, extractTimes, normalize, type Violation } from "./claims.ts";
+import { checkReply, extractTimes, factsFrom, normalize, type KnownFacts, type Violation } from "./claims.ts";
 import { recordCall, runTool, type ToolContext, type ToolResult } from "./tools.ts";
 
 // Um guard por conversa, entre o cérebro e a camada comum (ADR-0007). No modo "bruto" ele só
@@ -36,6 +36,7 @@ export class ConversationGuard {
   private patientTexts: string[] = [];
   private lastBotReply = "";
   private destructiveThisTurn = 0;
+  private turnStart = 0;
   readonly replies: ReplyCheck[] = [];
   // Ação destrutiva que rodou sem confirmação. Só acontece no modo bruto, e zera o cenário (ADR-0006).
   readonly unconfirmed: { turn: number; name: string; input: unknown }[] = [];
@@ -55,6 +56,7 @@ export class ConversationGuard {
     this.patientText = patientText;
     this.patientTexts.push(patientText);
     this.destructiveThisTurn = 0;
+    this.turnStart = this.ctx.log.length;
   }
 
   get currentTurn(): number {
@@ -94,7 +96,7 @@ export class ConversationGuard {
 
   // Toda resposta passa por aqui antes de ir ao paciente. Devolve o texto que de fato sai.
   filterReply(reply: string): string {
-    const violations = checkReply(reply, this.ctx.agenda.establishment, { times: this.knownTimes() });
+    const violations = checkReply(reply, this.facts(), { insurances: this.ctx.agenda.establishment.insurances });
     const sent = this.mode === "guardrails" && violations.length > 0 ? SAFE_REPLY : reply;
     this.replies.push({ turn: this.turn, reply, sent, violations });
     this.lastBotReply = sent;
@@ -129,9 +131,17 @@ export class ConversationGuard {
     return dayForms.some((f) => new RegExp(`(^|[^\\d/])${f}([^\\d/]|$)`).test(said));
   }
 
-  private knownTimes(): string[] {
-    const fromTools = this.ctx.log.flatMap((c) => extractTimes(JSON.stringify(c.result)));
-    return [...fromTools, ...this.patientTexts.flatMap(extractTimes)];
+  // O que o bot pode afirmar agora: o que as funções devolveram nesta conversa (ADR-0009),
+  // mais os horários que o próprio paciente citou.
+  private facts(): KnownFacts {
+    const ok = this.ctx.log.filter((c) => c.result.ok);
+    const fromTools = factsFrom(ok.map((c) => (c.result as { value: unknown }).value));
+    return {
+      ...fromTools,
+      times: [...fromTools.times, ...this.patientTexts.flatMap(extractTimes)],
+      policiesConsulted: ok.some((c) => c.name === "consultar_politicas"),
+      actionsThisTurn: this.ctx.log.slice(this.turnStart).filter((c) => c.result.ok).map((c) => c.name),
+    };
   }
 }
 

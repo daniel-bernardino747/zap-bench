@@ -33,10 +33,15 @@ Auditoria de `src/domain/` corrigida com testes:
 
 Ids de agendamento continuam sequenciais por agenda, porque a execução gravada precisa se repetir igual. Em produção, o banco real usa ids aleatórios.
 
+## Lastro por função (ADR-0009)
+
+- O cérebro não recebe os dados da clínica: preço, convênio, política e endereço só chegam por função de consulta.
+- O filtro aceita um fato só se ele veio de uma função nesta conversa. Política citada sem `consultar_politicas` é violação. "Agendado" ou "cancelado" sem a função correspondente no turno também é violação.
+
 ## Guardrails do modo "com guardrails" (ADR-0007)
 
 - Confirmação por código antes de agendar, remarcar ou cancelar.
-- Filtro de saída: preço, horário, profissional e convênio conferidos contra configuração e agenda. Lista de termos proibidos (ofensas, diagnóstico, medicamento).
+- Filtro de saída: resposta com fato sem lastro em função, ação não executada, ofensa ou medicamento vira o template seguro.
 - Pré-processamento do buffer inteiro, não de cada mensagem isolada.
 - Limite de uma ação destrutiva por turno.
 

@@ -22,6 +22,22 @@
       [
         "nao"
       ]
+    ],
+    "ou": [
+      {
+        "chama": [
+          {
+            "ferramenta": "verificar_convenio"
+          }
+        ]
+      },
+      {
+        "chama": [
+          {
+            "ferramenta": "consultar_servico"
+          }
+        ]
+      }
     ]
   }
 }

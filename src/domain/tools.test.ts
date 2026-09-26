@@ -45,6 +45,11 @@ describe("ferramentas", () => {
   it("exporta um JSON Schema por ferramenta para os LLMs", () => {
     const schemas = toolSchemas();
     expect(schemas.map((s) => s.name)).toEqual([
+      "info_clinica",
+      "listar_servicos",
+      "consultar_servico",
+      "verificar_convenio",
+      "consultar_politicas",
       "buscar_horarios",
       "agendar",
       "meus_agendamentos",
@@ -52,7 +57,7 @@ describe("ferramentas", () => {
       "cancelar",
       "chamar_humano",
     ]);
-    expect(schemas[1].inputSchema).toMatchObject({ type: "object", required: expect.arrayContaining(["data", "hora"]) });
+    expect(schemas.find((s) => s.name === "agendar")?.inputSchema).toMatchObject({ type: "object", required: expect.arrayContaining(["data", "hora"]) });
   });
 });
 
@@ -115,6 +120,47 @@ describe("defesas das ferramentas", () => {
     const ctx = context();
     runTool(ctx, "agendar", { ...booking, nome_paciente: "A".repeat(100_000) });
     expect(JSON.stringify(ctx.log[0].input).length).toBeLessThan(1_000);
+  });
+});
+
+describe("funções de consulta", () => {
+  it("consultar_servico aceita id, nome ou apelido, e lista os serviços quando não acha", () => {
+    expect(runTool(context(), "consultar_servico", { servico: "Obturação" })).toMatchObject({
+      ok: true,
+      value: { id: "restauracao", preco: 250, preco_texto: "R$ 250", profissionais: ["Dra. Ana Lima"], coberto_por_convenio: true },
+    });
+    expect(runTool(context(), "consultar_servico", { servico: "avaliacao" })).toMatchObject({ value: { preco_texto: "gratuito" } });
+    const r = runTool(context(), "consultar_servico", { servico: "implante" });
+    expect(r).toMatchObject({ ok: false, error: "servico_desconhecido" });
+    expect(JSON.stringify(r)).toContain("Clareamento");
+  });
+
+  it("verificar_convenio diz se aceita e se cobre o serviço", () => {
+    expect(runTool(context(), "verificar_convenio", { convenio: "amil", servico: "clareamento" })).toMatchObject({
+      value: { aceito: true, nome_oficial: "Amil Dental", cobre_servico: false },
+    });
+    expect(runTool(context(), "verificar_convenio", { convenio: "Unimed Odonto" })).toMatchObject({ value: { aceito: false } });
+  });
+
+  it("consultar_politicas devolve o texto literal da clínica", () => {
+    const r = runTool(context(), "consultar_politicas", {});
+    expect(JSON.stringify(r)).toContain("Não cobramos multa por falta.");
+  });
+
+  it("info_clinica traz endereço e horário por dia", () => {
+    expect(runTool(context(), "info_clinica", {})).toMatchObject({
+      value: { endereco: "Rua Fictícia, 123, Centro", horario: [{ abre: "08:00", fecha: "18:00" }, { dias: ["sábado"], fecha: "12:00" }] },
+    });
+  });
+
+  it("buscar_horarios traz o nome do profissional", () => {
+    const r = runTool(context(), "buscar_horarios", { servico: "limpeza", a_partir_de: "2026-09-29", dias: 1 });
+    expect((r as { value: unknown[] }).value[0]).toMatchObject({ profissional_nome: "Dra. Ana Lima" });
+  });
+
+  it("em emergência, a mensagem ao paciente é a da clínica", () => {
+    const r = runTool(context(), "chamar_humano", { motivo: "emergencia", resumo: "dor forte" });
+    expect(r).toMatchObject({ value: { mensagem_para_o_paciente: expect.stringContaining("pronto-socorro") } });
   });
 });
 

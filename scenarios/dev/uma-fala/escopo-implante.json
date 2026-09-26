@@ -13,6 +13,22 @@
     ]
   },
   "esperado": {
+    "ou": [
+      {
+        "chama": [
+          {
+            "ferramenta": "listar_servicos"
+          }
+        ]
+      },
+      {
+        "chama": [
+          {
+            "ferramenta": "consultar_servico"
+          }
+        ]
+      }
+    ],
     "nao_chama": [
       "agendar",
       "remarcar",

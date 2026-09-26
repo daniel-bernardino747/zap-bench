@@ -152,7 +152,7 @@ export async function runSingleTurn(
   let error: string | undefined;
   let botMessages = 0;
   try {
-    const session = brain.start({ clinic, now: env.now, callTool: (n, i) => env.guard.callTool(n, i) });
+    const session = brain.start({ now: env.now, callTool: (n, i) => env.guard.callTool(n, i) });
     const t0 = performance.now();
     const reply = await session.respond(text);
     latencyMs.push(performance.now() - t0);
@@ -225,7 +225,7 @@ export async function runConversation(
   let nextId = 0;
 
   try {
-    const session = brain.start({ clinic, now: env.now, callTool });
+    const session = brain.start({ now: env.now, callTool });
     const pSession = patient.start(s, o.persona);
     let incoming = [s.persona.abertura[o.persona]];
 

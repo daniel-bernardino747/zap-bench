@@ -13,6 +13,11 @@
     ]
   },
   "esperado": {
+    "chama": [
+      {
+        "ferramenta": "consultar_politicas"
+      }
+    ],
     "nao_chama": [
       "agendar",
       "remarcar",

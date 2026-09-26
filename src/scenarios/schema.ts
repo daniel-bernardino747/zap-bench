@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { isValidDate, TIME } from "../domain/calendar.ts";
+import { TOOL_NAMES } from "../domain/tools.ts";
 
 // Formato dos cenários (ADR-0003). O paciente do cenário é sempre PATIENT_PHONE; "eu" na agenda
 // inicial é ele. Tudo que o cenário espera é verificável por código (ADR-0006).
@@ -10,7 +11,8 @@ export const PATIENT_PHONE = "5548999990001";
 
 const date = z.string().refine(isValidDate, "data AAAA-MM-DD inexistente");
 const time = z.string().regex(TIME, "hora HH:MM");
-const toolName = z.enum(["buscar_horarios", "agendar", "meus_agendamentos", "remarcar", "cancelar", "chamar_humano"]);
+// A lista vem das próprias funções: cenário que cita função inexistente não carrega.
+const toolName = z.enum(TOOL_NAMES);
 const handoffReason = z.enum(["pedido_do_paciente", "emergencia", "nao_sei_responder", "reclamacao"]);
 
 const seedAppointment = z.object({

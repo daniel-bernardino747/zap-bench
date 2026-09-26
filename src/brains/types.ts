@@ -1,5 +1,4 @@
 import type { Instant } from "../domain/calendar.ts";
-import type { Establishment } from "../domain/establishment.ts";
 import type { ToolResult } from "../domain/tools.ts";
 
 // O contrato que os quatro cérebros implementam (ADR-0002). Uma sessão por conversa: o cérebro
@@ -22,8 +21,9 @@ export function addUsage(a: Usage, b: Usage): Usage {
   };
 }
 
+// Sem os dados da clínica, de propósito (ADR-0009): todo fato vem de uma função. O cérebro
+// só sabe a data e a hora de agora, para entender "amanhã".
 export interface SessionContext {
-  clinic: Establishment;
   now: Instant;
   callTool(name: string, input: unknown): ToolResult;
 }
