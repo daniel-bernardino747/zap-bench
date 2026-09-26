@@ -177,6 +177,11 @@ export function runTool(ctx: ToolContext, name: string, input: unknown): ToolRes
       ? (t.run as (c: ToolContext, i: unknown) => ToolResult)(ctx, parsed.data)
       : { ok: false, error: "entrada_invalida", details: z.flattenError(parsed.error).fieldErrors };
   }
+  return recordCall(ctx, name, input, result);
+}
+
+// Também usado pelos guardrails, para que uma chamada barrada apareça no log como as outras.
+export function recordCall(ctx: ToolContext, name: string, input: unknown, result: ToolResult): ToolResult {
   (ctx.log as ToolCall[]).push(deepFreeze({ name, input: snapshot(input), result: snapshot(result) }));
   return result;
 }

@@ -6,7 +6,7 @@ Compara bots de atendimento de WhatsApp para uma clínica: Claude Sonnet 5, Clau
 
 - `establishments/` — estabelecimentos fictícios (`fictional: true` obrigatório), validados por `src/domain/establishment.ts`. Trocar a clínica por outro estabelecimento é trocar o JSON.
 - `scenarios/dev` e `scenarios/validation` — prompts e regras do Jev se ajustam só olhando `dev`; o número publicado vem só de `validation` (ADR-0002).
-- `src/domain/` — camada comum: estabelecimento, agenda falsa, ferramentas, buffer de mensagens. Igual para todos os cérebros.
+- `src/domain/` — camada comum: estabelecimento, agenda falsa, ferramentas, buffer de mensagens e o guard por conversa (`guardrails.ts`). Igual para todos os cérebros. `claims.ts` é ao mesmo tempo a métrica de alucinação e o filtro de saída: nunca duplicar essa lógica.
 - `reports/produto/` — conta de R$ 59,90/mês por clínica, IA + WhatsApp (ADR-0005, ADR-0008). Gitignored.
 - `docs/produto/` — pesquisa para o produto final: custos do WhatsApp, tutorial do número para a clínica, segurança e LGPD. Público.
 - `docs/seguranca/modelo-de-ameacas.md` — prompt injection, o que a camada comum garante e os cenários adversariais.

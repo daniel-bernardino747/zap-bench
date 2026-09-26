@@ -82,6 +82,10 @@ export class Agenda {
 
   // Tudo que sai da agenda é cópia: quem recebe (o log da avaliação, um cérebro) não
   // consegue mudar a agenda, e a agenda não reescreve o que já foi registrado.
+  get today(): string {
+    return this.now.date;
+  }
+
   list(): Appointment[] {
     return this.appointments.map(copy);
   }
