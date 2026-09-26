@@ -11,3 +11,5 @@ Premissas:
 A conta desconta impostos (~6% se Simples Nacional), infraestrutura por clínica e margem, e diz para cada cérebro se cabe. Preços de Sonnet, Haiku, GPT e Jev vêm das páginas oficiais na data da execução, gravados junto. O custo do WhatsApp Cloud API para conversas iniciadas pelo paciente ainda precisa ser confirmado.
 
 Isso é planejamento de produto, não comparação: o showcase (ADR-0001) não mostra a conta.
+
+> **Atualização (26/09/2026):** a premissa de que o atendimento no WhatsApp é gratuito caiu. Ver ADR-0008.
