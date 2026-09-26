@@ -1,0 +1,35 @@
+{
+  "id": "politica-desconto-estudante",
+  "tarefa": "politica",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Vocês dão desconto pra estudante?"
+    ],
+    "dificil": [
+      "tem desconto p estudante?"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true,
+    "ou": [
+      {
+        "chama": [
+          {
+            "ferramenta": "chamar_humano"
+          }
+        ]
+      },
+      {
+        "admite_nao_saber": true
+      }
+    ]
+  }
+}

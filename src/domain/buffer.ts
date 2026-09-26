@@ -4,8 +4,21 @@
 // que a simulação seja determinística.
 
 export interface Incoming {
+  // Id da mensagem no canal (wamid no WhatsApp). O webhook pode entregar a mesma mensagem mais
+  // de uma vez; deduplicar pelo id, nunca pelo texto, porque "sim" repetido é mensagem nova.
+  id?: string;
   text: string;
   at: number;
+}
+
+export type Media = "audio" | "imagem" | "video" | "documento" | "figurinha";
+
+// Mídia chega aos quatro cérebros como o mesmo marcador: nenhum deles ouve áudio nem vê
+// imagem, e nenhum pode fingir que viu.
+export function mediaMarker(media: Media, caption?: string): string {
+  const what = { audio: "um áudio", imagem: "uma imagem", video: "um vídeo", documento: "um documento", figurinha: "uma figurinha" }[media];
+  const marker = `[o paciente enviou ${what}, que o atendimento automático não consegue abrir]`;
+  return caption?.trim() ? `${marker}\n${caption.trim()}` : marker;
 }
 
 export interface BufferPolicy {
@@ -17,11 +30,18 @@ export const DEFAULT_BUFFER: BufferPolicy = { quietMs: 8_000, maxWaitMs: 30_000 
 
 export class MessageBuffer {
   private pending: Incoming[] = [];
+  private seen = new Set<string>();
 
   constructor(private readonly policy: BufferPolicy = DEFAULT_BUFFER) {}
 
-  push(message: Incoming): void {
+  // Devolve false quando a mensagem é uma entrega repetida e foi descartada.
+  push(message: Incoming): boolean {
+    if (message.id !== undefined) {
+      if (this.seen.has(message.id)) return false;
+      this.seen.add(message.id);
+    }
     this.pending.push(message);
+    return true;
   }
 
   // Quando o bot deve responder: depois de `quietMs` sem mensagem nova, ou `maxWaitMs`

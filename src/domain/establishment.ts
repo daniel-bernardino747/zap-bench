@@ -12,6 +12,15 @@ export const Establishment = z
     fictional: z.literal(true),
     address: z.string().min(1),
     phone: z.string().min(1),
+    // Fuso da clínica: "amanhã" às 23:50 depende dele, e o servidor pode estar em UTC.
+    timezone: z.string().refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("pt-BR", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "fuso IANA inválido"),
     hours: z.array(z.object({ days: z.array(weekday).min(1), open: time, close: time })).min(1),
     slotMinutes: z.number().int().positive(),
     insurances: z.array(z.string().min(1)),
@@ -31,6 +40,9 @@ export const Establishment = z
         }),
       )
       .min(1),
+    // O que a clínica afirma sobre pagamento, faltas etc. O bot só pode citar política daqui;
+    // o que não está aqui ele não sabe (casos Air Canada, Cursor).
+    policies: z.array(z.object({ topic: z.string().min(1), text: z.string().min(1) })).default([]),
     emergency: z.object({ keywords: z.array(z.string().min(1)).min(1), message: z.string().min(1) }),
   })
   .superRefine((e, ctx) => {

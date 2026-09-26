@@ -5,6 +5,7 @@
   "fictional": true,
   "address": "Rua Fictícia, 123, Centro",
   "phone": "(00) 0000-0000",
+  "timezone": "America/Sao_Paulo",
   "hours": [
     { "days": ["seg", "ter", "qua", "qui", "sex"], "open": "08:00", "close": "18:00" },
     { "days": ["sab"], "open": "08:00", "close": "12:00" }
@@ -23,6 +24,10 @@
     { "id": "canal", "name": "Tratamento de canal", "aliases": ["canal", "endodontia"], "priceBRL": 900, "durationMinutes": 90, "professionalIds": ["carla"], "coveredByInsurance": true },
     { "id": "clareamento", "name": "Clareamento", "aliases": ["clarear"], "priceBRL": 1200, "durationMinutes": 60, "professionalIds": ["ana"], "coveredByInsurance": false },
     { "id": "manutencao-aparelho", "name": "Manutenção de aparelho", "aliases": ["aparelho", "ortodontia"], "priceBRL": 150, "durationMinutes": 30, "professionalIds": ["bruno"], "coveredByInsurance": false }
+  ],
+  "policies": [
+    { "topic": "pagamento", "text": "Aceitamos Pix, dinheiro e cartão de débito ou crédito. Tratamentos acima de R$ 500 podem ser parcelados em até 3x sem juros no cartão de crédito." },
+    { "topic": "faltas e cancelamento", "text": "Pedimos que cancele ou remarque com pelo menos 24 horas de antecedência. Não cobramos multa por falta." }
   ],
   "emergency": {
     "keywords": ["sangramento", "sangrando", "dor forte", "inchaço", "dente quebrado", "trauma"],

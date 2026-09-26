@@ -40,6 +40,10 @@ describe("afirmações da resposta", () => {
     ]);
   });
 
+  it("aceita valor citado numa política da clínica", () => {
+    expect(checkReply("Acima de R$ 500 dá para parcelar em 3x.", clinic, { times: [] })).toEqual([]);
+  });
+
   it("aceita o que está na configuração ou já apareceu na conversa", () => {
     expect(
       checkReply("Limpeza é R$ 180 e canal R$ 900,00, com a Dra. Ana ou o Dr. Bruno. Abrimos 08:00 e temos 10h30.", clinic, {

@@ -20,8 +20,8 @@ function all() {
 
 describe("conjunto de cenários", () => {
   it("tem o tamanho combinado", () => {
-    expect(set.singleTurn).toHaveLength(34);
-    expect(set.conversations).toHaveLength(8);
+    expect(set.singleTurn).toHaveLength(43);
+    expect(set.conversations).toHaveLength(12);
   });
 
   it("não repete id", () => {

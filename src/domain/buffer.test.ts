@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MessageBuffer } from "./buffer.ts";
+import { mediaMarker, MessageBuffer } from "./buffer.ts";
 
 describe("buffer de mensagens", () => {
   it("junta mensagens seguidas e responde depois do silêncio", () => {
@@ -23,3 +23,22 @@ describe("buffer de mensagens", () => {
     expect(new MessageBuffer().isDue(1e12)).toBe(false);
   });
 });
+
+describe("entrega repetida e mídia", () => {
+  it("descarta a mesma mensagem entregue duas vezes, mas não um 'sim' novo com o mesmo texto", () => {
+    const b = new MessageBuffer();
+    expect(b.push({ id: "wamid.1", text: "sim", at: 0 })).toBe(true);
+    expect(b.push({ id: "wamid.1", text: "sim", at: 200 })).toBe(false);
+    expect(b.flush().text).toBe("sim");
+    expect(b.push({ id: "wamid.1", text: "sim", at: 60_000 })).toBe(false);
+    expect(b.push({ id: "wamid.2", text: "sim", at: 60_000 })).toBe(true);
+  });
+
+  it("mídia vira o mesmo marcador para todos, com a legenda depois", () => {
+    expect(mediaMarker("audio")).toBe("[o paciente enviou um áudio, que o atendimento automático não consegue abrir]");
+    expect(mediaMarker("imagem", " tá inflamado? ")).toBe(
+      "[o paciente enviou uma imagem, que o atendimento automático não consegue abrir]\ntá inflamado?",
+    );
+  });
+});
+

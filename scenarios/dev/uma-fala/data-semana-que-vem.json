@@ -1,0 +1,36 @@
+{
+  "id": "data-semana-que-vem",
+  "tarefa": "data_relativa",
+  "agora": "2026-10-01T15:00",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Tem horário pra limpeza na semana que vem?"
+    ],
+    "dificil": [
+      "semana q vem tem limpeza?"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "buscar_horarios",
+        "argumentos": {
+          "a_partir_de": {
+            "entre": [
+              "2026-10-05",
+              "2026-10-09"
+            ]
+          }
+        }
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

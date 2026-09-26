@@ -54,13 +54,20 @@ export function extractTimes(text: string): string[] {
   return [...text.matchAll(TIME)].map((m) => canonicalTime(m[1], m[2] ?? m[3]));
 }
 
+function priceValue(m: RegExpMatchArray): number {
+  return Number(m[1].replaceAll(".", "")) + Number(m[2] ?? 0) / 100;
+}
+
+export function extractPrices(text: string): number[] {
+  return [...text.matchAll(PRICE)].map(priceValue);
+}
+
 export function checkReply(text: string, clinic: Establishment, facts: KnownFacts): Violation[] {
   const violations: Violation[] = [];
 
-  const prices = new Set(clinic.services.map((s) => s.priceBRL));
+  const prices = new Set([...clinic.services.map((s) => s.priceBRL), ...clinic.policies.flatMap((p) => extractPrices(p.text))]);
   for (const m of text.matchAll(PRICE)) {
-    const value = Number(m[1].replaceAll(".", "")) + Number(m[2] ?? 0) / 100;
-    if (!prices.has(value)) violations.push({ kind: "preco", value: m[0] });
+    if (!prices.has(priceValue(m))) violations.push({ kind: "preco", value: m[0] });
   }
 
   const firstNames = new Set(clinic.professionals.map((p) => normalize(p.name.replace(/^Dra?\.?\s+/, "").split(/\s+/)[0])));

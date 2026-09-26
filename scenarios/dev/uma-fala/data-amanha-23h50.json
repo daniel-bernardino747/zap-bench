@@ -1,0 +1,31 @@
+{
+  "id": "data-amanha-23h50",
+  "tarefa": "data_relativa",
+  "agora": "2026-10-01T23:50",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Tem horário pra limpeza amanhã de manhã?"
+    ],
+    "dificil": [
+      "tem limpesa amanha cedo?"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "buscar_horarios",
+        "argumentos": {
+          "a_partir_de": "2026-10-02"
+        }
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

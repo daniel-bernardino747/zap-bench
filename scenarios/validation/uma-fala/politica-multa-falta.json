@@ -1,0 +1,31 @@
+{
+  "id": "politica-multa-falta",
+  "tarefa": "politica",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Se eu faltar na consulta, pago multa?"
+    ],
+    "dificil": [
+      "se eu falta pago multa?"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true,
+    "resposta_contem": [
+      [
+        "nao"
+      ],
+      [
+        "24"
+      ]
+    ]
+  }
+}

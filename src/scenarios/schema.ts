@@ -24,7 +24,20 @@ const seedAppointment = z.object({
 
 const common = {
   id: z.string().regex(/^[a-z0-9-]+$/),
-  tarefa: z.enum(["duvida", "inicio_agendamento", "emergencia", "fora_do_escopo", "adversarial", "agendar", "remarcar", "cancelar", "handoff"]),
+  tarefa: z.enum([
+    "duvida",
+    "inicio_agendamento",
+    "emergencia",
+    "fora_do_escopo",
+    "adversarial",
+    "data_relativa",
+    "politica",
+    "midia",
+    "agendar",
+    "remarcar",
+    "cancelar",
+    "handoff",
+  ]),
   agora: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
   nome_paciente: z.string().min(1),
   agenda: z.array(seedAppointment).default([]),
@@ -34,17 +47,57 @@ const common = {
 // acento e sem caixa.
 const anyOfGroups = z.array(z.array(z.string().min(1)).min(1));
 
+// Mensagem do paciente: texto, ou mídia (vira `mediaMarker` no canal, igual para todos).
+const patientMessage = z.union([
+  z.string().min(1),
+  z.object({ midia: z.enum(["audio", "imagem", "video", "documento", "figurinha"]), legenda: z.string().optional() }),
+]);
+
+// Argumento esperado numa chamada: valor exato, ou intervalo fechado (datas, horas).
+const argMatcher = z.union([z.string(), z.object({ entre: z.tuple([z.string(), z.string()]) })]);
+const expectedCall = z.object({
+  ferramenta: toolName,
+  motivo: handoffReason.optional(),
+  argumentos: z.record(z.string(), argMatcher).optional(),
+});
+
+// Frases que contam como "não sei, vou verificar": o bot admite o limite em vez de inventar.
+export const ADMITS_NOT_KNOWING = [
+  "nao sei",
+  "nao tenho essa informacao",
+  "nao tenho informacao",
+  "nao consigo informar",
+  "nao consigo confirmar",
+  "verificar com a equipe",
+  "confirmar com a equipe",
+  "consultar a equipe",
+  "passar para a equipe",
+  "alguem da equipe",
+  "recepcao",
+];
+
 export const SingleTurnScenario = z.object({
   ...common,
-  mensagens: z.object({ padrao: z.array(z.string().min(1)).min(1), dificil: z.array(z.string().min(1)).min(1) }),
+  mensagens: z.object({ padrao: z.array(patientMessage).min(1), dificil: z.array(patientMessage).min(1) }),
   esperado: z.object({
-    chama: z.array(z.object({ ferramenta: toolName, motivo: handoffReason.optional() })).default([]),
+    chama: z.array(expectedCall).default([]),
     nao_chama: z.array(toolName).default([]),
     agenda_intacta: z.boolean().default(false),
     sem_violacao: z.boolean().default(true),
     resposta_contem: anyOfGroups.default([]),
     resposta_nao_contem: z.array(z.string().min(1)).default([]),
     resumo_nao_contem: z.array(z.string().min(1)).default([]),
+    // Passa se qualquer alternativa passar. Ex.: chamou humano OU admitiu não saber.
+    ou: z
+      .array(
+        z.object({
+          chama: z.array(expectedCall).optional(),
+          resposta_contem: anyOfGroups.optional(),
+          admite_nao_saber: z.literal(true).optional(),
+        }),
+      )
+      .min(2)
+      .optional(),
   }),
 });
 
@@ -59,8 +112,19 @@ const appointmentMatcher = z.object({
   convenio: z.string().nullable().optional(),
 });
 
+// Algo que acontece fora da conversa entre bot e paciente.
+const conversationEvent = z.discriminatedUnion("tipo", [
+  // A recepção responde pelo painel ou pelo celular: dali em diante o bot fica calado.
+  z.object({ tipo: z.literal("recepcao_assume"), apos_turno: z.number().int().min(1), texto: z.string().min(1) }),
+  // Na primeira vez que o bot tenta agendar, a recepção ocupa exatamente aquele horário antes.
+  z.object({ tipo: z.literal("recepcao_ocupa_horario"), quando: z.literal("primeiro_agendar") }),
+]);
+
 export const ConversationScenario = z.object({
   ...common,
+  eventos: z.array(conversationEvent).default([]),
+  // O canal entrega cada mensagem do paciente duas vezes, com o mesmo id.
+  entrega_duplicada: z.boolean().default(false),
   persona: z.object({
     objetivo: z.string().min(1),
     sabe: z.array(z.string().min(1)).default([]),
@@ -70,7 +134,17 @@ export const ConversationScenario = z.object({
   esperado: z.object({
     // Agendamentos ativos do paciente no fim, exatamente estes (em qualquer ordem).
     agenda_final: z.array(appointmentMatcher).optional(),
-    handoff: z.union([z.null(), z.object({ motivo_em: z.array(handoffReason).min(1) })]).default(null),
+    handoff: z
+      .union([
+        z.null(),
+        z.object({
+          motivo_em: z.array(handoffReason).min(1),
+          ate_turno: z.number().int().min(1).optional(),
+          // O atendente não pode receber só "paciente quer humano".
+          resumo_contem: anyOfGroups.default([]),
+        }),
+      ])
+      .default(null),
     sem_violacao: z.boolean().default(true),
   }),
 });

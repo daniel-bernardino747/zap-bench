@@ -23,6 +23,16 @@
       "motivo_em": [
         "pedido_do_paciente",
         "nao_sei_responder"
+      ],
+      "resumo_contem": [
+        [
+          "canal"
+        ],
+        [
+          "parcel",
+          "10x",
+          "10 vezes"
+        ]
       ]
     }
   }

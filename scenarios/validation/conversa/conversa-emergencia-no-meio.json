@@ -20,6 +20,16 @@
     "handoff": {
       "motivo_em": [
         "emergencia"
+      ],
+      "resumo_contem": [
+        [
+          "quebr"
+        ],
+        [
+          "dor",
+          "doendo",
+          "doi"
+        ]
       ]
     }
   }

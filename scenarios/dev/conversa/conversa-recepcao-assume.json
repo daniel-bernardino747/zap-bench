@@ -1,0 +1,27 @@
+{
+  "id": "conversa-recepcao-assume",
+  "tarefa": "handoff",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Beatriz Alves",
+  "agenda": [],
+  "persona": {
+    "objetivo": "marcar uma avaliação; no meio da conversa a recepção assume o atendimento",
+    "sabe": [
+      "não tem convênio",
+      "quer avaliação na quinta"
+    ],
+    "abertura": {
+      "padrao": "Oi, queria marcar uma avaliação pra quinta.",
+      "dificil": "oi qro avaliaçao quinta"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {},
+  "eventos": [
+    {
+      "tipo": "recepcao_assume",
+      "apos_turno": 2,
+      "texto": "Oi, Beatriz! Aqui é a Carla, da recepção. Vou continuar seu atendimento por aqui."
+    }
+  ]
+}

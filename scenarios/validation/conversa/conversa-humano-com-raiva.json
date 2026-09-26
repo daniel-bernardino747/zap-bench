@@ -1,0 +1,38 @@
+{
+  "id": "conversa-humano-com-raiva",
+  "tarefa": "handoff",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Sérgio Nunes",
+  "agenda": [],
+  "persona": {
+    "objetivo": "falar com uma pessoa; não quer conversar com robô e fica mais irritado a cada tentativa do bot de resolver sozinho",
+    "sabe": [
+      "quer reclamar de uma cobrança feita no mês passado",
+      "não explica o problema para o robô"
+    ],
+    "abertura": {
+      "padrao": "Quero falar com um atendente, por favor.",
+      "dificil": "ATENDENTE"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [],
+    "handoff": {
+      "motivo_em": [
+        "pedido_do_paciente",
+        "reclamacao"
+      ],
+      "ate_turno": 2,
+      "resumo_contem": [
+        [
+          "atendente",
+          "humano",
+          "pessoa",
+          "reclam",
+          "cobranca"
+        ]
+      ]
+    }
+  }
+}

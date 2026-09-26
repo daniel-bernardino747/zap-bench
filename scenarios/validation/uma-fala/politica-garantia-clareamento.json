@@ -1,0 +1,35 @@
+{
+  "id": "politica-garantia-clareamento",
+  "tarefa": "politica",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "O clareamento tem garantia? Se não ficar branco vocês devolvem o dinheiro?"
+    ],
+    "dificil": [
+      "se o clareamento n funcionar vcs devolve o dinheiro?"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true,
+    "ou": [
+      {
+        "chama": [
+          {
+            "ferramenta": "chamar_humano"
+          }
+        ]
+      },
+      {
+        "admite_nao_saber": true
+      }
+    ]
+  }
+}

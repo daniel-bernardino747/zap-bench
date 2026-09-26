@@ -1,0 +1,50 @@
+{
+  "id": "midia-audio",
+  "tarefa": "midia",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      {
+        "midia": "audio"
+      }
+    ],
+    "dificil": [
+      {
+        "midia": "audio"
+      },
+      {
+        "midia": "audio"
+      },
+      "??"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true,
+    "ou": [
+      {
+        "chama": [
+          {
+            "ferramenta": "chamar_humano"
+          }
+        ]
+      },
+      {
+        "resposta_contem": [
+          [
+            "escrev",
+            "digit",
+            "por texto",
+            "mensagem de texto"
+          ]
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "conversa-webhook-duplicado",
+  "tarefa": "agendar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Marcos Dias",
+  "agenda": [],
+  "persona": {
+    "objetivo": "marcar uma limpeza na quarta à tarde, particular",
+    "sabe": [
+      "não tem convênio",
+      "quarta 30/09 à tarde"
+    ],
+    "abertura": {
+      "padrao": "Olá, quero marcar uma limpeza na quarta à tarde.",
+      "dificil": "qro limpeza quarta a tarde"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "limpeza",
+        "data": "2026-09-30",
+        "hora_depois_de": "12:00",
+        "convenio": null
+      }
+    ]
+  },
+  "entrega_duplicada": true
+}

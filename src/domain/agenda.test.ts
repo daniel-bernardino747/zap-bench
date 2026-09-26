@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { Agenda } from "./agenda.ts";
-import { weekdayOf } from "./calendar.ts";
+import { clinicNow, weekdayOf } from "./calendar.ts";
 import { loadEstablishment, type Establishment } from "./establishment.ts";
 
 let clinic: Establishment;
@@ -26,6 +26,11 @@ describe("calendário", () => {
     expect(weekdayOf("2026-09-28")).toBe("seg");
     expect(weekdayOf("2026-10-03")).toBe("sab");
     expect(weekdayOf("2026-10-04")).toBe("dom");
+  });
+
+  it("usa o relógio da clínica, não o do servidor", () => {
+    // 02:50 UTC de sexta ainda é 23:50 de quinta em São Paulo.
+    expect(clinicNow(new Date("2026-10-02T02:50:00Z"), "America/Sao_Paulo")).toEqual({ date: "2026-10-01", time: "23:50" });
   });
 });
 

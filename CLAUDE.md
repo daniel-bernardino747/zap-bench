@@ -10,6 +10,7 @@ Compara bots de atendimento de WhatsApp para uma clínica: Claude Sonnet 5, Clau
 - `reports/produto/` — conta de R$ 59,90/mês por clínica, IA + WhatsApp (ADR-0005, ADR-0008). Gitignored.
 - `docs/produto/` — pesquisa para o produto final: custos do WhatsApp, tutorial do número para a clínica, segurança e LGPD. Público.
 - `docs/seguranca/modelo-de-ameacas.md` — prompt injection, o que a camada comum garante e os cenários adversariais.
+- `docs/pesquisa/problemas-reais.md` — o que dá errado com bots de atendimento de verdade, e que cenário cobre cada coisa.
 
 ## Regras
 

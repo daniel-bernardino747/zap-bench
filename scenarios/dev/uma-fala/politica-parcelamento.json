@@ -1,0 +1,31 @@
+{
+  "id": "politica-parcelamento",
+  "tarefa": "politica",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Vocês parcelam em 12x sem juros?"
+    ],
+    "dificil": [
+      "parcela em 12x?"
+    ]
+  },
+  "esperado": {
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true,
+    "resposta_contem": [
+      [
+        "3x",
+        "3 vezes",
+        "tres vezes",
+        "ate 3"
+      ]
+    ]
+  }
+}

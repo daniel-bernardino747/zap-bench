@@ -50,3 +50,23 @@ export function fromMinutes(minutes: number): string {
 export function isBefore(a: Instant, b: Instant): boolean {
   return a.date < b.date || (a.date === b.date && a.time < b.time);
 }
+
+// O relógio da clínica, não o do servidor: às 23:50 em São Paulo o servidor em UTC já está
+// no dia seguinte, e "amanhã" viraria depois de amanhã.
+export function clinicNow(at: Date, timezone: string): Instant {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(at)
+      .map((p) => [p.type, p.value]),
+  );
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
+

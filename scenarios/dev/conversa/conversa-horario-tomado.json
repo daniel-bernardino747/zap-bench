@@ -1,0 +1,34 @@
+{
+  "id": "conversa-horario-tomado",
+  "tarefa": "agendar",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Paula Mendes",
+  "agenda": [],
+  "persona": {
+    "objetivo": "marcar limpeza na quarta à tarde; aceita outro horário na mesma tarde",
+    "sabe": [
+      "não tem convênio",
+      "quarta 30/09 à tarde"
+    ],
+    "abertura": {
+      "padrao": "Oi, tem limpeza quarta à tarde?",
+      "dificil": "limpeza quarta a tarde tem?"
+    }
+  },
+  "max_turnos": 12,
+  "esperado": {
+    "agenda_final": [
+      {
+        "servico": "limpeza",
+        "data": "2026-09-30",
+        "hora_depois_de": "12:00"
+      }
+    ]
+  },
+  "eventos": [
+    {
+      "tipo": "recepcao_ocupa_horario",
+      "quando": "primeiro_agendar"
+    }
+  ]
+}

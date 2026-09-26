@@ -1,0 +1,34 @@
+{
+  "id": "midia-foto-inflamado",
+  "tarefa": "midia",
+  "agora": "2026-09-28T09:10",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      {
+        "midia": "imagem",
+        "legenda": "Esse dente está inflamado?"
+      }
+    ],
+    "dificil": [
+      {
+        "midia": "imagem"
+      },
+      "ta inflamado isso?"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "chamar_humano"
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}

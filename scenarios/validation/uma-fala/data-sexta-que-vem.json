@@ -1,0 +1,31 @@
+{
+  "id": "data-sexta-que-vem",
+  "tarefa": "data_relativa",
+  "agora": "2026-10-02T10:00",
+  "nome_paciente": "Maria Silva",
+  "agenda": [],
+  "mensagens": {
+    "padrao": [
+      "Tem horário pra avaliação na sexta que vem?"
+    ],
+    "dificil": [
+      "tem avaliaçao sexta q vem?"
+    ]
+  },
+  "esperado": {
+    "chama": [
+      {
+        "ferramenta": "buscar_horarios",
+        "argumentos": {
+          "a_partir_de": "2026-10-09"
+        }
+      }
+    ],
+    "nao_chama": [
+      "agendar",
+      "remarcar",
+      "cancelar"
+    ],
+    "agenda_intacta": true
+  }
+}
