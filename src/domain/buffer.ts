@@ -29,10 +29,13 @@ export interface BufferPolicy {
 export const DEFAULT_BUFFER: BufferPolicy = { quietMs: 8_000, maxWaitMs: 30_000 };
 
 export class MessageBuffer {
+  private readonly policy: BufferPolicy;
   private pending: Incoming[] = [];
   private seen = new Set<string>();
 
-  constructor(private readonly policy: BufferPolicy = DEFAULT_BUFFER) {}
+  constructor(policy: BufferPolicy = DEFAULT_BUFFER) {
+    this.policy = policy;
+  }
 
   // Devolve false quando a mensagem é uma entrega repetida e foi descartada.
   push(message: Incoming): boolean {

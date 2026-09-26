@@ -68,15 +68,21 @@ export const DEFAULT_LIMITS: AgendaLimits = { maxActivePerPatient: 3, horizonDay
 // Ids sequenciais por agenda, não aleatórios: uma execução gravada precisa se repetir igual.
 // Não vazam nada entre pacientes, porque id de outro paciente é "não encontrado".
 export class Agenda {
+  readonly establishment: Establishment;
+  private readonly now: Instant;
+  private readonly limits: AgendaLimits;
   private appointments: Appointment[] = [];
   private nextId = 1;
 
   constructor(
-    readonly establishment: Establishment,
-    private readonly now: Instant,
+    establishment: Establishment,
+    now: Instant,
     seed: Omit<Appointment, "id" | "status">[] = [],
-    private readonly limits: AgendaLimits = DEFAULT_LIMITS,
+    limits: AgendaLimits = DEFAULT_LIMITS,
   ) {
+    this.establishment = establishment;
+    this.now = now;
+    this.limits = limits;
     for (const a of seed) this.insert(a);
   }
 

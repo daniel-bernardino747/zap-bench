@@ -37,11 +37,17 @@ export class ConversationGuard {
   private lastBotReply = "";
   private destructiveThisTurn = 0;
   readonly replies: ReplyCheck[] = [];
+  // Ação destrutiva que rodou sem confirmação. Só acontece no modo bruto, e zera o cenário (ADR-0006).
+  readonly unconfirmed: { turn: number; name: string; input: unknown }[] = [];
+  handoffTurn: number | null = null;
 
-  constructor(
-    readonly ctx: ToolContext,
-    readonly mode: Mode,
-  ) {}
+  readonly ctx: ToolContext;
+  readonly mode: Mode;
+
+  constructor(ctx: ToolContext, mode: Mode) {
+    this.ctx = ctx;
+    this.mode = mode;
+  }
 
   // Chamado com o texto que saiu do buffer, antes de o cérebro responder.
   beginTurn(patientText: string): void {
@@ -51,8 +57,25 @@ export class ConversationGuard {
     this.destructiveThisTurn = 0;
   }
 
+  get currentTurn(): number {
+    return this.turn;
+  }
+
   callTool(name: string, input: unknown): ToolResult {
-    if (this.mode === "bruto" || !DESTRUCTIVE.has(name) || this.ctx.handoff) return runTool(this.ctx, name, input);
+    const result = this.dispatch(name, input);
+    if (this.ctx.handoff && this.handoffTurn === null) this.handoffTurn = this.turn;
+    return result;
+  }
+
+  private dispatch(name: string, input: unknown): ToolResult {
+    if (!DESTRUCTIVE.has(name) || this.ctx.handoff) return runTool(this.ctx, name, input);
+    if (this.mode === "bruto") {
+      const target = this.target(name, input);
+      const confirmed = target !== null && this.confirmed(target);
+      const result = runTool(this.ctx, name, input);
+      if (result.ok && !confirmed) this.unconfirmed.push({ turn: this.turn, name, input });
+      return result;
+    }
 
     if (this.destructiveThisTurn >= 1) return recordCall(this.ctx, name, input, { ok: false, error: "uma_acao_por_vez" });
 
