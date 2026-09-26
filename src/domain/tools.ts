@@ -14,6 +14,7 @@ export interface Handoff {
 }
 
 export interface ToolCall {
+  turn: number;
   name: string;
   input: unknown;
   result: ToolResult;
@@ -26,6 +27,8 @@ export interface ToolContext {
   patientPhone: string;
   handoff: Handoff | null;
   log: readonly ToolCall[];
+  // Turno atual da conversa, mantido pelo guard; vai em cada chamada registrada.
+  turn: number;
 }
 
 // O telefone vem do canal (WhatsApp/Chatwoot), nunca do cérebro. É a identidade do paciente,
@@ -37,7 +40,7 @@ export function normalizePhone(raw: string): string {
 }
 
 export function createToolContext(agenda: Agenda, rawPhone: string): ToolContext {
-  return { agenda, patientPhone: normalizePhone(rawPhone), handoff: null, log: [] };
+  return { agenda, patientPhone: normalizePhone(rawPhone), handoff: null, log: [], turn: 0 };
 }
 
 const date = z.string().refine(isValidDate, "data inexistente ou fora do formato AAAA-MM-DD").describe("Data no formato AAAA-MM-DD");
@@ -303,7 +306,7 @@ export function runTool(ctx: ToolContext, name: string, input: unknown): ToolRes
 
 // Também usado pelos guardrails, para que uma chamada barrada apareça no log como as outras.
 export function recordCall(ctx: ToolContext, name: string, input: unknown, result: ToolResult): ToolResult {
-  (ctx.log as ToolCall[]).push(deepFreeze({ name, input: snapshot(input), result: snapshot(result) }));
+  (ctx.log as ToolCall[]).push(deepFreeze({ turn: ctx.turn, name, input: snapshot(input), result: snapshot(result) }));
   return result;
 }
 

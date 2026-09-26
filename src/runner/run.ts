@@ -49,6 +49,7 @@ export interface RunRecord {
   toolCalls: Observed["toolCalls"];
   violationsGenerated: number;
   violationsSent: number;
+  violations: { turn: number; kind: string; value: string; sent: boolean }[];
   unconfirmed: Observed["unconfirmed"];
   handoff: Observed["handoff"];
   handoffTurn: number | null;
@@ -109,7 +110,7 @@ function base(s: AnyScenario & { split: Split }, kind: RunRecord["kind"], brain:
 
 function finish(
   env: ReturnType<typeof setup>,
-  partial: Omit<RunRecord, "toolCalls" | "violationsGenerated" | "violationsSent" | "unconfirmed" | "handoff" | "handoffTurn" | "patientAgenda" | "passed">,
+  partial: Omit<RunRecord, "toolCalls" | "violationsGenerated" | "violationsSent" | "violations" | "unconfirmed" | "handoff" | "handoffTurn" | "patientAgenda" | "passed">,
 ): RunRecord {
   const replies = env.guard.replies;
   return {
@@ -117,6 +118,7 @@ function finish(
     toolCalls: env.ctx.log,
     violationsGenerated: replies.reduce((n, r) => n + r.violations.length, 0),
     violationsSent: replies.filter((r) => r.sent === r.reply).reduce((n, r) => n + r.violations.length, 0),
+    violations: replies.flatMap((r) => r.violations.map((v) => ({ turn: r.turn, kind: v.kind, value: v.value, sent: r.sent === r.reply }))),
     unconfirmed: env.guard.unconfirmed,
     handoff: env.ctx.handoff,
     handoffTurn: env.guard.handoffTurn,

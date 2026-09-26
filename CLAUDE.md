@@ -10,6 +10,7 @@ Compara bots de atendimento de WhatsApp para uma clínica: Claude Sonnet 5, Clau
 - `src/brains/` — o contrato `Brain`/`BrainSession` (uma sessão por conversa, ferramentas só via `callTool`) e o registro em `index.ts`. `rules.ts` é um cérebro falso, sem IA, só para testar o encanamento; não entra na comparação.
 - `src/sim/patient.ts` — interface do paciente simulado e um paciente por regras. O de verdade é um LLM via `SIM_*` (ADR-0003).
 - `src/runner/` — `run.ts` roda um cenário (buffer, eventos da recepção, entrega duplicada, guard); `evaluate.ts` são as verificações; `suite.ts` é a rodada com trava de custo e o resumo.
+- `src/export/` — o contrato (`schema.ts`) e a montagem do `data.json` que a página do Labs lê. Só rodada da validation; cérebro falso ou paciente por regras saem com `synthetic: true`, e a página não publica isso.
 - `runs/` — saída do executor (`records.jsonl` + `summary.json`). Gitignored; o que for publicado vai para `results/`.
 - `reports/produto/` — conta de R$ 59,90/mês por clínica, IA + WhatsApp (ADR-0005, ADR-0008). Gitignored.
 - `docs/produto/` — pesquisa para o produto final: custos do WhatsApp, tutorial do número para a clínica, segurança e LGPD. Público.
@@ -33,4 +34,5 @@ npm test          # vitest
 npm run typecheck
 npm run bench -- run --smoke                       # um cenário por tarefa, cérebro falso
 npm run bench -- run --brain sonnet,jev --split dev  # dev, 3 execuções, os dois modos e as duas personas
+npm run bench -- export latest --out <arquivo>        # última rodada da validation → data.json da página do Labs
 ```

@@ -57,6 +57,7 @@ export class ConversationGuard {
     this.patientTexts.push(patientText);
     this.destructiveThisTurn = 0;
     this.turnStart = this.ctx.log.length;
+    this.ctx.turn = this.turn;
   }
 
   get currentTurn(): number {

@@ -1,14 +1,17 @@
-import { mkdir, writeFile, appendFile } from "node:fs/promises";
+import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { resolveBrains } from "./brains/index.ts";
 import { loadEstablishment } from "./domain/establishment.ts";
 import type { Mode } from "./domain/guardrails.ts";
+import { buildDataFile } from "./export/build.ts";
+import type { RunRecord } from "./runner/run.ts";
 import { runSuite, summarize } from "./runner/suite.ts";
 import { rulePatient, type Persona } from "./sim/patient.ts";
 import { loadScenarios, type ScenarioSet, type Split } from "./scenarios/schema.ts";
 
 const USAGE = `uso: npm run bench -- run [opções]
+       npm run bench -- export <pasta da rodada | latest> --out <arquivo>
 
   --brain <ids>      cérebros separados por vírgula (padrão: regras)
   --split <s>        dev | validation | all (padrão: dev)
@@ -44,15 +47,17 @@ async function main() {
       only: { type: "string" },
       smoke: { type: "boolean", default: false },
       budget: { type: "string" },
+      out: { type: "string" },
       help: { type: "boolean", default: false },
     },
   });
+  if (positionals[0] === "export") return exportRun(positionals[1], values.out);
   if (values.help || positionals[0] !== "run") {
     console.log(USAGE);
     process.exit(values.help ? 0 : 1);
   }
 
-  const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+  const root = repoRoot();
   const clinic = await loadEstablishment(join(root, "establishments/clinica-odontologica.json"));
   const splits: Split[] = values.split === "all" ? ["dev", "validation"] : [values.split as Split];
   let set = await loadScenarios(join(root, "scenarios"), splits);
@@ -132,6 +137,40 @@ async function main() {
   );
   if (result.stoppedByBudget) console.warn(`parou na trava de custo: US$ ${result.costUSD.toFixed(2)} de ${budgetUSD}`);
   console.log(`gravado em ${dir}`);
+}
+
+function repoRoot(): string {
+  return new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+}
+
+// A página do Labs lê o que sai daqui (ADR-0001). Só rodada da validation; dado de teste
+// sai marcado como synthetic, e a página se recusa a publicá-lo.
+async function exportRun(which: string | undefined, out: string | undefined) {
+  if (!which || !out) {
+    console.log(USAGE);
+    process.exit(1);
+  }
+  const root = repoRoot();
+  let dir = which;
+  if (which === "latest") {
+    const runs = (await readdir(join(root, "runs")).catch(() => [])).sort();
+    const latest = [];
+    for (const r of runs) {
+      const meta = JSON.parse(await readFile(join(root, "runs", r, "summary.json"), "utf8").catch(() => "{}"));
+      if (meta.splits?.length === 1 && meta.splits[0] === "validation") latest.push(r);
+    }
+    if (!latest.length) throw new Error("nenhuma rodada da validation em runs/");
+    dir = join(root, "runs", latest.at(-1)!);
+  }
+  const meta = JSON.parse(await readFile(join(dir, "summary.json"), "utf8"));
+  const records: RunRecord[] = (await readFile(join(dir, "records.jsonl"), "utf8"))
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
+  const set = await loadScenarios(join(root, "scenarios"), ["validation"]);
+  const data = buildDataFile(records, meta, set, new Date().toISOString());
+  await writeFile(out, JSON.stringify(data) + "\n");
+  console.log(`${out}: ${records.length} execuções, ${data.transcripts.length} transcrições${data.synthetic ? ", DADOS DE TESTE" : ""}`);
 }
 
 main().catch((e) => {
