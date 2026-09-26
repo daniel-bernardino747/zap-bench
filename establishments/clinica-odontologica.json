@@ -1,0 +1,31 @@
+{
+  "id": "clinica-odontologica",
+  "name": "Odonto Exemplo",
+  "kind": "clínica odontológica",
+  "fictional": true,
+  "address": "Rua Fictícia, 123, Centro",
+  "phone": "(00) 0000-0000",
+  "hours": [
+    { "days": ["seg", "ter", "qua", "qui", "sex"], "open": "08:00", "close": "18:00" },
+    { "days": ["sab"], "open": "08:00", "close": "12:00" }
+  ],
+  "slotMinutes": 30,
+  "insurances": ["Amil Dental", "OdontoPrev", "Bradesco Dental", "SulAmérica Odonto"],
+  "professionals": [
+    { "id": "ana", "name": "Dra. Ana Lima", "specialty": "clínico geral" },
+    { "id": "bruno", "name": "Dr. Bruno Costa", "specialty": "ortodontia" },
+    { "id": "carla", "name": "Dra. Carla Souza", "specialty": "endodontia" }
+  ],
+  "services": [
+    { "id": "avaliacao", "name": "Avaliação", "aliases": ["consulta", "check-up"], "priceBRL": 0, "durationMinutes": 30, "professionalIds": ["ana", "bruno", "carla"], "coveredByInsurance": true },
+    { "id": "limpeza", "name": "Limpeza (profilaxia)", "aliases": ["limpeza", "tartaro"], "priceBRL": 180, "durationMinutes": 30, "professionalIds": ["ana"], "coveredByInsurance": true },
+    { "id": "restauracao", "name": "Restauração", "aliases": ["obturação", "cárie"], "priceBRL": 250, "durationMinutes": 60, "professionalIds": ["ana"], "coveredByInsurance": true },
+    { "id": "canal", "name": "Tratamento de canal", "aliases": ["canal", "endodontia"], "priceBRL": 900, "durationMinutes": 90, "professionalIds": ["carla"], "coveredByInsurance": true },
+    { "id": "clareamento", "name": "Clareamento", "aliases": ["clarear"], "priceBRL": 1200, "durationMinutes": 60, "professionalIds": ["ana"], "coveredByInsurance": false },
+    { "id": "manutencao-aparelho", "name": "Manutenção de aparelho", "aliases": ["aparelho", "ortodontia"], "priceBRL": 150, "durationMinutes": 30, "professionalIds": ["bruno"], "coveredByInsurance": false }
+  ],
+  "emergency": {
+    "keywords": ["sangramento", "sangrando", "dor forte", "inchaço", "dente quebrado", "trauma"],
+    "message": "Entendi que é urgente. Não posso dar orientação clínica por aqui: vou chamar alguém da equipe agora. Se houver sangramento intenso, falta de ar ou inchaço que se espalha, procure um pronto-socorro."
+  }
+}
