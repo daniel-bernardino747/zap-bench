@@ -7,6 +7,7 @@ import type { Mode } from "./domain/guardrails.ts";
 import { buildDataFile } from "./export/build.ts";
 import type { RunRecord } from "./runner/run.ts";
 import { runSuite, summarize } from "./runner/suite.ts";
+import { llmPatient, simConfig } from "./sim/llm.ts";
 import { rulePatient, type Persona } from "./sim/patient.ts";
 import { loadScenarios, type ScenarioSet, type Split } from "./scenarios/schema.ts";
 
@@ -78,6 +79,9 @@ async function main() {
   const personas = both<Persona>(values.persona, "padrao", "dificil");
   const repeats = values.smoke ? 1 : Number(values.repeats);
   const budgetUSD = Number(values.budget ?? process.env.BUDGET_USD ?? 15);
+  const sim = simConfig(process.env);
+  const patient = sim ? llmPatient(sim) : rulePatient;
+  if (!sim && set.conversations.length) console.warn("sem SIM_* no .env: as conversas usam o paciente por regras (só encanamento)");
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const dir = join(root, "runs", `${stamp}-${brains.map((b) => b.id).join("+")}`);
@@ -86,7 +90,7 @@ async function main() {
 
   const result = await runSuite(clinic, set, {
     brains,
-    patient: rulePatient,
+    patient,
     modes,
     personas,
     repeats,
@@ -109,7 +113,7 @@ async function main() {
         splits,
         smoke: values.smoke,
         repeats,
-        patient: { id: rulePatient.id, model: rulePatient.model },
+        patient: { id: patient.id, model: patient.model },
         brains: brains.map((b) => ({ id: b.id, model: b.model })),
         costUSD: result.costUSD,
         stoppedByBudget: result.stoppedByBudget,
