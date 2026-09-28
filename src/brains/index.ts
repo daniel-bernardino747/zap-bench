@@ -20,6 +20,9 @@ export const BRAINS: Entry[] = [
   { id: "jev", env: "TYPESAFE_API_KEY", create: () => jevBrain },
 ];
 
+// Modelos que estão na comparação: o paciente simulado e o juiz nunca podem ser um deles (ADR-0010).
+export const BRAIN_MODELS = ["claude-sonnet-5", "claude-haiku-4-5", "jev-1.13.0"];
+
 export function resolveBrains(ids: string[], env: NodeJS.ProcessEnv): { brains: Brain[]; skipped: string[] } {
   const brains: Brain[] = [];
   const skipped: string[] = [];

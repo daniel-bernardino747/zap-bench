@@ -99,7 +99,7 @@ async function main() {
       await appendFile(recordsFile, JSON.stringify(r) + "\n");
       const failed = r.checks.filter((c) => !c.ok).map((c) => c.id);
       process.stdout.write(
-        `[${done}/${total}] ${r.passed ? "ok  " : "FALHA"} ${r.brain.id} ${r.mode} ${r.persona} ${r.scenarioId}${failed.length ? ` (${failed.join(", ")})` : ""}\n`,
+        `[${done}/${total}] ${r.outcome === "paciente_indisponivel" ? "SEM PACIENTE" : r.passed ? "ok  " : "FALHA"}${r.brain.id} ${r.mode} ${r.persona} ${r.scenarioId}${failed.length ? ` (${failed.join(", ")})` : ""}\n`,
       );
     },
   });
