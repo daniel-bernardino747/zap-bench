@@ -22,7 +22,26 @@ export interface KnownFacts {
   policiesConsulted: boolean;
   // Funções que deram certo neste turno: dão lastro a "agendado", "cancelado" etc.
   actionsThisTurn: Iterable<string>;
+  // meus_agendamentos já rodou na conversa: "você tem 2 consultas marcadas" descreve o que a
+  // função devolveu, não uma ação.
+  appointmentsListed?: boolean;
 }
+
+// Frases que contam como "não sei, vou verificar": o bot admite o limite em vez de inventar.
+// Também valem para o filtro: citar uma política só para dizer que não sabe dela não é inventar.
+export const ADMITS_NOT_KNOWING = [
+  "nao sei",
+  "nao tenho essa informacao",
+  "nao tenho informacao",
+  "nao consigo informar",
+  "nao consigo confirmar",
+  "verificar com a equipe",
+  "confirmar com a equipe",
+  "consultar a equipe",
+  "passar para a equipe",
+  "alguem da equipe",
+  "recepcao",
+];
 
 // Nomes que o filtro procura na resposta. Vem da configuração da clínica, mas só serve para
 // reconhecer uma menção: a menção precisa ter lastro nos resultados das funções.
@@ -56,6 +75,9 @@ const FORBIDDEN = [
 const POLICY_WORDS = ["multa", "parcel", "juros", "garantia", "desconto", "reembolso", "devolu", "devolv", "pix"];
 
 // Ação dita como feita. Cada uma exige a função correspondente com sucesso neste turno.
+// O primeiro padrão também descreve estado ("consultas marcadas"): com a lista de
+// agendamentos consultada, só conta como ação quando vem como feito ("foi marcada", "pronto").
+const DONE = /\b(foi|foram|ficou|ficaram|pronto|ja)(\s+\S+){0,3}\s*$/;
 const ACTION_CLAIMS: [RegExp, string[]][] = [
   [/\b(agendad[oa]s?|marcad[oa]s?|reservad[oa]s?)\b/, ["agendar", "remarcar", "meus_agendamentos"]],
   [/\b(remarcad[oa]s?|reagendad[oa]s?|alterad[oa]s?)\b/, ["remarcar", "meus_agendamentos"]],
@@ -142,14 +164,18 @@ export function checkReply(text: string, facts: KnownFacts, vocab: Vocabulary): 
   }
 
   if (!facts.policiesConsulted) {
-    const word = POLICY_WORDS.find((w) => new RegExp(`\\b${w}`).test(words));
+    const sentences = words.split(/[.!?\n]+/).filter((s) => !ADMITS_NOT_KNOWING.some((p) => s.includes(p)));
+    const word = POLICY_WORDS.find((w) => sentences.some((s) => new RegExp(`\\b${w}`).test(s)));
     if (word) violations.push({ kind: "politica", value: word });
   }
 
   const done = new Set(facts.actionsThisTurn);
-  for (const [pattern, backedBy] of ACTION_CLAIMS) {
+  for (const [i, [pattern, backedBy]] of ACTION_CLAIMS.entries()) {
     const m = pattern.exec(words);
-    if (m && !negated(words, m.index) && !backedBy.some((t) => done.has(t))) violations.push({ kind: "acao_nao_executada", value: m[0] });
+    if (!m || negated(words, m.index) || backedBy.some((t) => done.has(t))) continue;
+    const before = words.slice(Math.max(0, m.index - 30), m.index);
+    if (i === 0 && facts.appointmentsListed && !DONE.test(before)) continue;
+    violations.push({ kind: "acao_nao_executada", value: m[0] });
   }
 
   for (const term of FORBIDDEN) {

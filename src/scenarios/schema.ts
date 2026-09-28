@@ -63,20 +63,8 @@ const expectedCall = z.object({
   argumentos: z.record(z.string(), argMatcher).optional(),
 });
 
-// Frases que contam como "não sei, vou verificar": o bot admite o limite em vez de inventar.
-export const ADMITS_NOT_KNOWING = [
-  "nao sei",
-  "nao tenho essa informacao",
-  "nao tenho informacao",
-  "nao consigo informar",
-  "nao consigo confirmar",
-  "verificar com a equipe",
-  "confirmar com a equipe",
-  "consultar a equipe",
-  "passar para a equipe",
-  "alguem da equipe",
-  "recepcao",
-];
+// A lista vive em claims.ts, porque o filtro de saída também a usa.
+export { ADMITS_NOT_KNOWING } from "../domain/claims.ts";
 
 export const SingleTurnScenario = z.object({
   ...common,

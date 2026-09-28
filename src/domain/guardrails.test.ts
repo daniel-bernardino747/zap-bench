@@ -84,6 +84,19 @@ describe("afirmações da resposta", () => {
     expect(checkReply("Não encontrei, então nada foi cancelado.", NOTHING, vocab())).toEqual([]);
     expect(checkReply("Sua consulta não foi cancelada.", NOTHING, vocab())).toEqual([]);
   });
+
+  it("admitir que não sabe de uma política não é citar a política", () => {
+    const text = "Não tenho informação sobre desconto para estudante. Vou chamar alguém da equipe.";
+    expect(checkReply(text, NOTHING, vocab())).toEqual([]);
+    expect(checkReply("Temos desconto de 10% para estudante.", NOTHING, vocab())).toEqual([{ kind: "politica", value: "desconto" }]);
+  });
+
+  it("descrever consultas já listadas não é afirmar que agendou", () => {
+    const listed = { ...NOTHING, appointmentsListed: true };
+    expect(checkReply("Você tem 2 consultas marcadas. Qual delas?", listed, vocab())).toEqual([]);
+    expect(checkReply("Você tem 2 consultas marcadas. Qual delas?", NOTHING, vocab())).toEqual([{ kind: "acao_nao_executada", value: "marcadas" }]);
+    expect(checkReply("Pronto, sua limpeza foi marcada!", listed, vocab())).toEqual([{ kind: "acao_nao_executada", value: "marcada" }]);
+  });
 });
 
 describe("sim do paciente", () => {

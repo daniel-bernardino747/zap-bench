@@ -142,6 +142,7 @@ export class ConversationGuard {
       times: [...fromTools.times, ...this.patientTexts.flatMap(extractTimes)],
       policiesConsulted: ok.some((c) => c.name === "consultar_politicas"),
       actionsThisTurn: this.ctx.log.slice(this.turnStart).filter((c) => c.result.ok).map((c) => c.name),
+      appointmentsListed: ok.some((c) => c.name === "meus_agendamentos"),
     };
   }
 }
