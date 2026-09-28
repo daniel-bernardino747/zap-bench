@@ -1,3 +1,5 @@
+import { claudeBrain } from "./claude.ts";
+import { jevBrain } from "./jev.ts";
 import { rulesBrain } from "./rules.ts";
 import type { Brain } from "./types.ts";
 
@@ -12,10 +14,10 @@ interface Entry {
 
 export const BRAINS: Entry[] = [
   { id: "regras", create: () => rulesBrain },
-  { id: "sonnet", env: "ANTHROPIC_API_KEY" },
-  { id: "haiku", env: "ANTHROPIC_API_KEY" },
+  { id: "sonnet", env: "ANTHROPIC_API_KEY", create: () => claudeBrain("sonnet", "Claude Sonnet 5", "claude-sonnet-5") },
+  { id: "haiku", env: "ANTHROPIC_API_KEY", create: () => claudeBrain("haiku", "Claude Haiku 4.5", "claude-haiku-4-5") },
   { id: "gpt", env: "OPENAI_API_KEY" },
-  { id: "jev", env: "TYPESAFE_API_KEY" },
+  { id: "jev", env: "TYPESAFE_API_KEY", create: () => jevBrain },
 ];
 
 export function resolveBrains(ids: string[], env: NodeJS.ProcessEnv): { brains: Brain[]; skipped: string[] } {
