@@ -1,6 +1,8 @@
 import personas from "../../scenarios/personas.json" with { type: "json" };
 import type { ConversationScenario } from "../scenarios/schema.ts";
-import { parseEnd, type Patient, type Persona } from "./patient.ts";
+import { parseEnd, PatientUnavailableError, type Patient, type Persona } from "./patient.ts";
+
+const ATTEMPTS = 8;
 
 // Paciente simulado por um LLM fora da comparação (ADR-0003), por qualquer endpoint
 // compatível com /chat/completions da OpenAI (ex.: modelo gratuito do OpenCode Zen).
@@ -27,9 +29,10 @@ export function simConfig(env: NodeJS.ProcessEnv): SimConfig | null {
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 export async function chat(c: SimConfig, messages: ChatMessage[]): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
+  // Plano gratuito tem picos de 503 que passam em minutos: espera crescente, até ~4 min no total.
   let lastError = "";
-  for (let attempt = 0; attempt < 4; attempt++) {
-    if (attempt) await new Promise((r) => setTimeout(r, 2_000 * 2 ** attempt));
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, Math.min(60_000, 5_000 * 2 ** (attempt - 1))));
     const res = await fetch(`${c.baseURL}/chat/completions`, {
       method: "POST",
       headers: { Authorization: `Bearer ${c.apiKey}`, "Content-Type": "application/json" },
@@ -56,7 +59,7 @@ export async function chat(c: SimConfig, messages: ChatMessage[]): Promise<{ tex
       outputTokens: body.usage?.completion_tokens ?? 0,
     };
   }
-  throw new Error(`paciente simulado: sem resposta depois de 4 tentativas (${lastError})`);
+  throw new PatientUnavailableError(`paciente simulado: sem resposta depois de ${ATTEMPTS} tentativas (${lastError})`);
 }
 
 function systemPrompt(s: ConversationScenario, persona: Persona): string {

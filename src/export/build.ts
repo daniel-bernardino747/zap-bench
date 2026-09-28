@@ -1,4 +1,5 @@
 import type { RunRecord } from "../runner/run.ts";
+import { scored } from "../runner/suite.ts";
 import type { ScenarioSet } from "../scenarios/schema.ts";
 import { DataFile } from "./schema.ts";
 
@@ -104,7 +105,9 @@ function scenarioTitle(set: ScenarioSet, id: string): string {
   return conv ? conv.persona.objetivo : id;
 }
 
-export function buildDataFile(records: RunRecord[], meta: RunMeta, set: ScenarioSet, generatedAt: string): DataFile {
+export function buildDataFile(allRecords: RunRecord[], meta: RunMeta, set: ScenarioSet, generatedAt: string): DataFile {
+  // Execução em que o paciente simulado caiu não mede o cérebro: não vai para a página.
+  const records = scored(allRecords);
   if (!meta.splits.every((s) => s === "validation")) {
     throw new Error(`só rodada da validation vai para a página (ADR-0002); esta tem: ${meta.splits.join(", ")}`);
   }

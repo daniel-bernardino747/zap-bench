@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { NO_USAGE, type Brain, type SessionContext } from "../brains/types.ts";
 import { loadEstablishment, type Establishment } from "../domain/establishment.ts";
-import { parseEnd, type Patient } from "../sim/patient.ts";
+import { parseEnd, PatientUnavailableError, type Patient } from "../sim/patient.ts";
 import { ConversationScenario, SingleTurnScenario } from "../scenarios/schema.ts";
 import { runConversation, runSingleTurn } from "./run.ts";
 import { runSuite, summarize } from "./suite.ts";
@@ -134,6 +134,26 @@ describe("conversa", () => {
       repeat: 1,
     });
     expect(r).toMatchObject({ passed: true, outcome: "fim", turns: 2, botMessages: 2 });
+  });
+
+  it("paciente simulado fora do ar não conta contra o cérebro: sai do resumo", async () => {
+    const down: Patient = {
+      id: "fora",
+      model: "fora",
+      start: () => ({
+        reply: async () => {
+          throw new PatientUnavailableError("HTTP 503");
+        },
+      }),
+    };
+    const r = await runConversation(clinic, conversation(agendar), scripted(confirmThenBook), down, { mode: "guardrails", persona: "padrao", repeat: 1 });
+    expect(r.outcome).toBe("paciente_indisponivel");
+    const ok = await runConversation(clinic, conversation(agendar), scripted(confirmThenBook), patient([["sim"], ["obrigada [FIM]"]]), {
+      mode: "guardrails",
+      persona: "padrao",
+      repeat: 1,
+    });
+    expect(summarize([r, ok])[0]).toMatchObject({ runs: 1, conversationPassRate: 1, patientUnavailable: 1 });
   });
 
   it("entrega duplicada: o cérebro vê cada mensagem uma vez só", async () => {

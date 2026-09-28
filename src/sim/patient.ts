@@ -10,6 +10,11 @@ import { normalize } from "../domain/claims.ts";
 export type Persona = "padrao" | "dificil";
 export type PatientEnd = "fim" | "desistiu" | null;
 
+// O simulador caiu (fila, limite de uso): a execução não mede o cérebro e sai das métricas.
+export class PatientUnavailableError extends Error {
+  override name = "PatientUnavailableError";
+}
+
 export interface PatientTurn {
   messages: string[];
   end: PatientEnd;

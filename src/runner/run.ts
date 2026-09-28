@@ -6,7 +6,7 @@ import { mediaMarker, MessageBuffer } from "../domain/buffer.ts";
 import type { Establishment } from "../domain/establishment.ts";
 import { ConversationGuard, type Mode } from "../domain/guardrails.ts";
 import { createToolContext, type ToolResult } from "../domain/tools.ts";
-import type { Patient, Persona } from "../sim/patient.ts";
+import { PatientUnavailableError, type Patient, type Persona } from "../sim/patient.ts";
 import { parseNow, PATIENT_PHONE, type ConversationScenario, type SingleTurnScenario, type Split } from "../scenarios/schema.ts";
 import { evaluateConversation, evaluateSingleTurn, type Check, type Observed } from "./evaluate.ts";
 
@@ -15,7 +15,8 @@ import { evaluateConversation, evaluateSingleTurn, type Check, type Observed } f
 
 export const RECEPTION_PHONE = "5500000000000";
 
-export type Outcome = "respondido" | "fim" | "desistiu" | "handoff" | "humano_assumiu" | "limite_de_turnos" | "erro";
+// "paciente_indisponivel": o simulador caiu; a execução fica gravada, mas não entra nas métricas.
+export type Outcome = "respondido" | "fim" | "desistiu" | "handoff" | "humano_assumiu" | "limite_de_turnos" | "erro" | "paciente_indisponivel";
 
 export interface TranscriptEntry {
   turn: number;
@@ -279,7 +280,7 @@ export async function runConversation(
       incoming = p.messages.length ? p.messages : ["?"];
     }
   } catch (e) {
-    outcome = "erro";
+    outcome = e instanceof PatientUnavailableError ? "paciente_indisponivel" : "erro";
     error = String((e as Error)?.message ?? e);
   }
 

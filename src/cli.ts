@@ -139,6 +139,8 @@ async function main() {
       "US$/conversa": r.costPerConversationUSD.toFixed(4),
     })),
   );
+  const lost = summary.reduce((n, r) => n + r.patientUnavailable, 0);
+  if (lost) console.warn(`${lost} execução(ões) fora das métricas: o paciente simulado não respondeu (outcome paciente_indisponivel)`);
   if (result.stoppedByBudget) console.warn(`parou na trava de custo: US$ ${result.costUSD.toFixed(2)} de ${budgetUSD}`);
   console.log(`gravado em ${dir}`);
 }

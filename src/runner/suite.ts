@@ -63,6 +63,7 @@ export interface SummaryRow {
   violationsSent: number;
   unconfirmedActions: number;
   errors: number;
+  patientUnavailable: number;
   botMessagesPerConversation: number;
   latencyP50Ms: number;
   latencyP95Ms: number;
@@ -79,14 +80,20 @@ function rate(rs: RunRecord[]): number {
   return rs.length ? rs.filter((r) => r.passed).length / rs.length : 0;
 }
 
+// Execuções que medem o cérebro: sem as que pararam porque o paciente simulado caiu.
+export function scored(records: RunRecord[]): RunRecord[] {
+  return records.filter((r) => r.outcome !== "paciente_indisponivel");
+}
+
 export function summarize(records: RunRecord[]): SummaryRow[] {
   const groups = new Map<string, RunRecord[]>();
   for (const r of records) {
     const key = `${r.brain.id}|${r.mode}|${r.persona}`;
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
-  return [...groups.entries()].map(([key, rs]) => {
+  return [...groups.entries()].map(([key, all]) => {
     const [brain, mode, persona] = key.split("|") as [string, Mode, Persona];
+    const rs = scored(all);
     const conversations = rs.filter((r) => r.kind === "conversa");
     const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
     return {
@@ -101,6 +108,7 @@ export function summarize(records: RunRecord[]): SummaryRow[] {
       violationsSent: rs.reduce((n, r) => n + r.violationsSent, 0),
       unconfirmedActions: rs.reduce((n, r) => n + r.unconfirmed.length, 0),
       errors: rs.filter((r) => r.outcome === "erro").length,
+      patientUnavailable: all.length - rs.length,
       botMessagesPerConversation: avg(conversations.map((r) => r.botMessages)),
       latencyP50Ms: percentile(rs.flatMap((r) => r.latencyMs), 50),
       latencyP95Ms: percentile(rs.flatMap((r) => r.latencyMs), 95),
