@@ -21,7 +21,7 @@ const TOOLS: Anthropic.Tool[] = toolSchemas().map((t) => {
   return { name: t.name, description: t.description, input_schema: schema as Anthropic.Tool.InputSchema };
 });
 
-function usageOf(model: string, u: Anthropic.Usage): Usage {
+export function usageOf(model: string, u: Anthropic.Usage): Usage {
   const p = PRICES[model];
   const cacheWrite = u.cache_creation_input_tokens ?? 0;
   const cacheRead = u.cache_read_input_tokens ?? 0;

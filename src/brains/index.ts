@@ -1,15 +1,16 @@
 import { claudeBrain } from "./claude.ts";
 import { gptBrain } from "./gpt.ts";
-import { jevBrain } from "./jev.ts";
+import { jevBrain, jevWriterBrain } from "./jev.ts";
 import { rulesBrain } from "./rules.ts";
 import type { Brain } from "./types.ts";
+import { claudeWriter } from "./writer.ts";
 
 // Registro dos cérebros. Um cérebro sem chave no .env, ou ainda não implementado, é pulado
 // com aviso e a rodada continua (ADR-0002).
 
 interface Entry {
   id: string;
-  env?: string;
+  env?: string | string[];
   create?: () => Brain;
 }
 
@@ -19,6 +20,8 @@ export const BRAINS: Entry[] = [
   { id: "haiku", env: "ANTHROPIC_API_KEY", create: () => claudeBrain("haiku", "Claude Haiku 4.5", "claude-haiku-4-5") },
   { id: "gpt", env: "OPENAI_API_KEY", create: () => gptBrain("gpt", "GPT-6 Astra", "gpt-6-astra") },
   { id: "jev", env: "TYPESAFE_API_KEY", create: () => jevBrain },
+  // Jev decide e age; o Haiku só reescreve a mensagem (ADR-0011).
+  { id: "jev-redator", env: ["TYPESAFE_API_KEY", "ANTHROPIC_API_KEY"], create: () => jevWriterBrain(claudeWriter("claude-haiku-4-5")) },
 ];
 
 // Modelos que estão na comparação: o paciente simulado e o juiz nunca podem ser um deles (ADR-0010).
@@ -30,7 +33,7 @@ export function resolveBrains(ids: string[], env: NodeJS.ProcessEnv): { brains: 
   for (const id of ids) {
     const entry = BRAINS.find((b) => b.id === id);
     if (!entry) skipped.push(`${id}: não existe (disponíveis: ${BRAINS.map((b) => b.id).join(", ")})`);
-    else if (entry.env && !env[entry.env]) skipped.push(`${id}: falta ${entry.env} no .env`);
+    else if ([entry.env ?? []].flat().some((k) => !env[k])) skipped.push(`${id}: falta ${[entry.env].flat().filter((k) => k && !env[k]).join(", ")} no .env`);
     else if (!entry.create) skipped.push(`${id}: ainda não implementado`);
     else brains.push(entry.create());
   }
