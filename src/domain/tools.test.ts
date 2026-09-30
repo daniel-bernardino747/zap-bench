@@ -153,6 +153,18 @@ describe("funções de consulta", () => {
     });
   });
 
+  it("buscar_horarios e agendar aceitam o serviço pelo nome, como consultar_servico, e o erro lista os que existem", () => {
+    const ctx = context();
+    const r = runTool(ctx, "buscar_horarios", { servico: "Restauração", a_partir_de: "2026-10-05", dias: 1 });
+    expect(r.ok && (r.value as unknown[]).length).toBeGreaterThan(0);
+    expect(runTool(ctx, "agendar", { nome_paciente: "Maria", servico: "Limpeza (profilaxia)", data: "2026-09-29", hora: "10:00" }).ok).toBe(true);
+    expect(runTool(ctx, "buscar_horarios", { servico: "implante" })).toMatchObject({
+      ok: false,
+      error: "servico_desconhecido",
+      details: { servicos: expect.arrayContaining([{ id: "limpeza", nome: "Limpeza (profilaxia)" }]) },
+    });
+  });
+
   it("buscar_horarios traz o nome do profissional", () => {
     const r = runTool(context(), "buscar_horarios", { servico: "limpeza", a_partir_de: "2026-09-29", dias: 1 });
     expect((r as { value: unknown[] }).value[0]).toMatchObject({ profissional_nome: "Dra. Ana Lima" });

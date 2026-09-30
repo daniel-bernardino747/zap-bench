@@ -90,6 +90,11 @@ export function findService(clinic: Establishment, query: string) {
   return clinic.services.find((s) => [s.id, s.name, ...s.aliases].some((alias) => normalize(alias) === q));
 }
 
+// Como em consultar_servico: id, nome ou apelido valem, e o erro diz quais existem.
+function unknownService(clinic: Establishment): ToolResult {
+  return { ok: false, error: "servico_desconhecido", details: { servicos: clinic.services.map((x) => ({ id: x.id, nome: x.name })) } };
+}
+
 function professionalName(clinic: Establishment, id: string): string {
   return clinic.professionals.find((p) => p.id === id)?.name ?? id;
 }
@@ -183,7 +188,7 @@ export const tools = [
     description:
       "Lista horários livres para um serviço. Sem data, busca a partir de hoje. Use 'depois' e 'antes' para filtrar o período do dia (ex.: manhã = antes de 12:00).",
     input: z.object({
-      servico: z.string().describe("id do serviço"),
+      servico: z.string().describe("id ou nome do serviço"),
       a_partir_de: date.optional(),
       dias: z.number().int().min(1).max(30).optional().describe("quantos dias buscar, padrão 7"),
       profissional: z.string().optional().describe("id do profissional"),
@@ -191,8 +196,10 @@ export const tools = [
       antes: time.optional(),
     }),
     run: (ctx, i) => {
+      const service = findService(ctx.agenda.establishment, i.servico);
+      if (!service) return unknownService(ctx.agenda.establishment);
       const r = ctx.agenda.findSlots({
-        serviceId: i.servico,
+        serviceId: service.id,
         fromDate: i.a_partir_de,
         days: i.dias,
         professionalId: i.profissional,
@@ -212,22 +219,25 @@ export const tools = [
     description: "Agenda uma consulta para o paciente desta conversa. Só chame depois que o paciente confirmar serviço, dia e horário.",
     input: z.object({
       nome_paciente: patientName,
-      servico: z.string().describe("id do serviço"),
+      servico: z.string().describe("id ou nome do serviço"),
       data: date,
       hora: time,
       profissional: z.string().optional().describe("id do profissional; sem ele, qualquer um livre"),
       convenio: z.string().nullable().optional().describe("nome do convênio exatamente como a clínica aceita, ou null se particular"),
     }),
-    run: (ctx, i) =>
-      ctx.agenda.book({
+    run: (ctx, i) => {
+      const service = findService(ctx.agenda.establishment, i.servico);
+      if (!service) return unknownService(ctx.agenda.establishment);
+      return ctx.agenda.book({
         patientPhone: ctx.patientPhone,
         patientName: i.nome_paciente,
-        serviceId: i.servico,
+        serviceId: service.id,
         date: i.data,
         time: i.hora,
         professionalId: i.profissional,
         insurance: i.convenio ?? null,
-      }),
+      });
+    },
   }),
   tool({
     name: "meus_agendamentos",
