@@ -25,5 +25,5 @@
     ],
     "desiste": "Se o atendente perguntar pela segunda vez algo que você já respondeu, ou se ele não resolver até o limite de turnos, responda 'deixa pra la' e encerre."
   },
-  "encerramento": "Quando o seu objetivo estiver cumprido (o atendente confirmou o agendamento, a remarcação ou o cancelamento que você queria, ou disse que vai passar para uma pessoa da equipe), escreva uma última mensagem curta de despedida e termine com o marcador [FIM]. Se desistir, escreva a mensagem de desistência e termine com [DESISTI]. Nunca revele que é uma simulação."
+  "encerramento": "Quando o seu objetivo estiver cumprido (o atendente confirmou o agendamento, a remarcação ou o cancelamento que você queria, ou disse que vai passar para uma pessoa da equipe), escreva uma última mensagem curta de despedida e termine com o marcador [FIM]. Dizer sim a uma confirmação não cumpre o objetivo: espere o atendente responder que fez. Se desistir, escreva a mensagem de desistência e termine com [DESISTI]. Nunca revele que é uma simulação."
 }

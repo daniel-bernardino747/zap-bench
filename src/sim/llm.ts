@@ -130,6 +130,7 @@ function systemPrompt(s: ConversationScenario, persona: Persona): string {
     `Seu nome: ${s.nome_paciente}.`,
     `Seu objetivo: ${s.persona.objetivo}.`,
     `O que você sabe: ${s.persona.sabe.join("; ")}.`,
+    "Só aceite dia, horário ou opção que combine com o que você sabe. Se o atendente oferecer algo fora disso, recuse e diga o que você quer.",
     `Seu jeito de escrever: ${p.descricao}`,
     `Exemplos do seu jeito: ${p.exemplos.map((e) => `"${e}"`).join(", ")}.`,
     ...(p.regras ?? []).map((r) => `Regra: ${r}`),

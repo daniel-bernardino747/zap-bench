@@ -7,7 +7,7 @@ import { mediaMarker, MessageBuffer } from "../domain/buffer.ts";
 import type { Establishment } from "../domain/establishment.ts";
 import { ConversationGuard, type Mode } from "../domain/guardrails.ts";
 import { createToolContext, type ToolResult } from "../domain/tools.ts";
-import { PatientUnavailableError, type Patient, type Persona } from "../sim/patient.ts";
+import { PatientUnavailableError, type Patient, type PatientEnd, type Persona } from "../sim/patient.ts";
 import { parseNow, PATIENT_PHONE, type ConversationScenario, type SingleTurnScenario, type Split } from "../scenarios/schema.ts";
 import { evaluateConversation, evaluateSingleTurn, type Check, type Observed } from "./evaluate.ts";
 
@@ -235,13 +235,16 @@ export async function runConversation(
   let turn = 0;
   let clock = 0;
   let nextId = 0;
+  // O paciente encerrou, mas o que ele mandou junto ("ss blz vlw") ainda chega ao bot, como
+  // num WhatsApp de verdade: o bot responde uma última vez e a conversa acaba.
+  let ending: PatientEnd = null;
 
   try {
     const session = brain.start({ now: env.now, callTool });
     const pSession = patient.start(s, o.persona);
     let incoming = [s.persona.abertura[o.persona]];
 
-    for (turn = 1; turn <= s.max_turnos; turn++) {
+    for (turn = 1; turn <= s.max_turnos || ending; turn++) {
       for (const text of incoming) {
         const message = { id: `m${nextId++}`, text, at: clock };
         buffer.push(message);
@@ -277,15 +280,19 @@ export async function runConversation(
         outcome = "handoff";
         break;
       }
+      if (ending) {
+        outcome = ending === "fim" ? "fim" : "desistiu";
+        break;
+      }
 
       const p = await pSession.reply(sent);
       patientUsage = addUsage(patientUsage, p.usage);
       clock += 30_000;
-      if (p.end) {
-        for (const m of p.messages) transcript.push({ turn: turn + 1, role: "paciente", text: m });
+      if (p.end && !p.messages.length) {
         outcome = p.end === "fim" ? "fim" : "desistiu";
         break;
       }
+      ending = p.end;
       incoming = p.messages.length ? p.messages : ["?"];
     }
   } catch (e) {
@@ -294,7 +301,7 @@ export async function runConversation(
     error = String((e as Error)?.message ?? e);
   }
 
-  const turns = Math.min(turn, s.max_turnos);
+  const turns = ending ? turn : Math.min(turn, s.max_turnos);
   const humanAt = transcript.findIndex((t) => t.role === "recepcao");
   const repliesAfterHuman = humanAt < 0 ? 0 : transcript.slice(humanAt).filter((t) => t.role === "bot" && !t.discarded).length;
 

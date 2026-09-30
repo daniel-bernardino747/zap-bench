@@ -128,12 +128,22 @@ describe("conversa", () => {
   };
 
   it("agenda com confirmação e termina quando o paciente encerra", async () => {
-    const r = await runConversation(clinic, conversation(agendar), scripted(confirmThenBook), patient([["sim"], ["obrigada [FIM]"]]), {
+    const r = await runConversation(clinic, conversation(agendar), scripted(confirmThenBook), patient([["sim"], ["[FIM]"]]), {
       mode: "guardrails",
       persona: "padrao",
       repeat: 1,
     });
     expect(r).toMatchObject({ passed: true, outcome: "fim", turns: 2, botMessages: 2 });
+  });
+
+  it("o que o paciente manda junto com o fim ainda chega ao bot, que responde uma última vez", async () => {
+    const r = await runConversation(clinic, conversation(agendar), scripted(confirmThenBook), patient([["ss pd marca", "vlw [FIM]"]]), {
+      mode: "guardrails",
+      persona: "dificil",
+      repeat: 1,
+    });
+    expect(r).toMatchObject({ passed: true, outcome: "fim", turns: 2, botMessages: 2 });
+    expect(r.transcript.at(-1)).toMatchObject({ turn: 2, role: "bot", text: "Agendado para terça, 29/09, às 10:00." });
   });
 
   it("paciente simulado fora do ar não conta contra o cérebro: sai do resumo", async () => {
@@ -189,7 +199,7 @@ describe("conversa", () => {
       persona: "padrao",
       repeat: 1,
     });
-    expect(r.toolCalls.map((c) => c.result.ok)).toEqual([false]);
+    expect(r.toolCalls.every((c) => !c.result.ok)).toBe(true);
     expect(r.toolCalls[0].result).toMatchObject({ error: "horario_ocupado" });
     expect(r.patientAgenda).toEqual([]);
     expect(r.outcome).toBe("desistiu");
