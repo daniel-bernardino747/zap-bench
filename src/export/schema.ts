@@ -18,7 +18,8 @@ export const DataFile = z.object({
   version: z.literal(1),
   generatedAt: z.string(),
   runAt: z.string(),
-  split: z.literal("validation"),
+  // "dev" só com --previa: casos em que o Jev foi ajustado, então nunca vai ao ar (ADR-0002).
+  split: z.enum(["validation", "dev"]),
   // Rodada com o cérebro falso ou com o paciente por regras: nunca vai ao ar.
   synthetic: z.boolean(),
   repeats: z.number().int(),

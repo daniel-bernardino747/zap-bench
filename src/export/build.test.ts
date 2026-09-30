@@ -38,6 +38,11 @@ describe("exportação para a página", () => {
     expect(() => buildDataFile(records, { ...meta, splits: ["dev"] }, set, "x")).toThrow(/validation/);
   });
 
+  it("a prévia aceita só a dev e sai marcada como dev, para a página não publicar", () => {
+    expect(buildDataFile(records, { ...meta, splits: ["dev"] }, set, "x", true).split).toBe("dev");
+    expect(() => buildDataFile(records, meta, set, "x", true)).toThrow(/prévia/);
+  });
+
   it("marca como dado de teste a rodada com o cérebro falso", () => {
     expect(buildDataFile(records, meta, set, "x").synthetic).toBe(true);
   });

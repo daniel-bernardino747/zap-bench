@@ -32,8 +32,9 @@ const BRAIN_LABELS: Record<string, string> = {
   regras: "Regras (falso, sem IA)",
   sonnet: "Claude Sonnet 5",
   haiku: "Claude Haiku 4.5",
-  gpt: "GPT",
+  gpt: "GPT-6 Astra",
   jev: "Jev",
+  "jev-redator": "Jev + redator",
 };
 
 // Cérebro falso ou paciente por regras: a rodada serve para testar, não para publicar.
@@ -105,11 +106,18 @@ function scenarioTitle(set: ScenarioSet, id: string): string {
   return conv ? conv.persona.objetivo : id;
 }
 
-export function buildDataFile(allRecords: RunRecord[], meta: RunMeta, set: ScenarioSet, generatedAt: string): DataFile {
+// `preview`: rodada da dev para ver a página localmente. Sai com split "dev", e a página se
+// recusa a publicá-la.
+export function buildDataFile(allRecords: RunRecord[], meta: RunMeta, set: ScenarioSet, generatedAt: string, preview = false): DataFile {
   // Execução em que o paciente simulado caiu não mede o cérebro: não vai para a página.
   const records = scored(allRecords);
-  if (!meta.splits.every((s) => s === "validation")) {
-    throw new Error(`só rodada da validation vai para a página (ADR-0002); esta tem: ${meta.splits.join(", ")}`);
+  const split = preview ? "dev" : "validation";
+  if (!meta.splits.every((s) => s === split)) {
+    throw new Error(
+      preview
+        ? `a prévia é só da dev; esta rodada tem: ${meta.splits.join(", ")}`
+        : `só rodada da validation vai para a página (ADR-0002); esta tem: ${meta.splits.join(", ")}`,
+    );
   }
   if (!records.length) throw new Error("rodada vazia");
 
@@ -176,7 +184,7 @@ export function buildDataFile(allRecords: RunRecord[], meta: RunMeta, set: Scena
     version: 1,
     generatedAt,
     runAt: meta.createdAt,
-    split: "validation",
+    split,
     synthetic: brainIds.some((b) => SYNTHETIC.has(b)) || SYNTHETIC.has(meta.patient.id),
     repeats: meta.repeats,
     brains: brainIds.map((id) => ({

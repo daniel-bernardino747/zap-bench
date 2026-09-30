@@ -12,7 +12,7 @@ import { rulePatient, type Persona } from "./sim/patient.ts";
 import { loadScenarios, type ScenarioSet, type Split } from "./scenarios/schema.ts";
 
 const USAGE = `uso: npm run bench -- run [opções]
-       npm run bench -- export <pasta da rodada | latest> --out <arquivo>
+       npm run bench -- export <pasta da rodada | latest> --out <arquivo> [--previa]
 
   --brain <ids>      cérebros separados por vírgula (padrão: regras)
   --split <s>        dev | validation | all (padrão: dev)
@@ -49,10 +49,11 @@ async function main() {
       smoke: { type: "boolean", default: false },
       budget: { type: "string" },
       out: { type: "string" },
+      previa: { type: "boolean", default: false },
       help: { type: "boolean", default: false },
     },
   });
-  if (positionals[0] === "export") return exportRun(positionals[1], values.out);
+  if (positionals[0] === "export") return exportRun(positionals[1], values.out, values.previa);
   if (values.help || positionals[0] !== "run") {
     console.log(USAGE);
     process.exit(values.help ? 0 : 1);
@@ -151,7 +152,8 @@ function repoRoot(): string {
 
 // A página do Labs lê o que sai daqui (ADR-0001). Só rodada da validation; dado de teste
 // sai marcado como synthetic, e a página se recusa a publicá-lo.
-async function exportRun(which: string | undefined, out: string | undefined) {
+// --previa: uma rodada da dev, para ver a página localmente; sai com split "dev" e nunca vai ao ar.
+async function exportRun(which: string | undefined, out: string | undefined, preview = false) {
   if (!which || !out) {
     console.log(USAGE);
     process.exit(1);
@@ -173,10 +175,10 @@ async function exportRun(which: string | undefined, out: string | undefined) {
     .split("\n")
     .filter(Boolean)
     .map((l) => JSON.parse(l));
-  const set = await loadScenarios(join(root, "scenarios"), ["validation"]);
-  const data = buildDataFile(records, meta, set, new Date().toISOString());
+  const set = await loadScenarios(join(root, "scenarios"), [preview ? "dev" : "validation"]);
+  const data = buildDataFile(records, meta, set, new Date().toISOString(), preview);
   await writeFile(out, JSON.stringify(data) + "\n");
-  console.log(`${out}: ${records.length} execuções, ${data.transcripts.length} transcrições${data.synthetic ? ", DADOS DE TESTE" : ""}`);
+  console.log(`${out}: ${records.length} execuções, ${data.transcripts.length} transcrições${data.synthetic ? ", DADOS DE TESTE" : ""}${preview ? ", PRÉVIA DA DEV" : ""}`);
 }
 
 main().catch((e) => {
