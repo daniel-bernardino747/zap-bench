@@ -34,6 +34,7 @@ const ABSENCE = [
   /\b(esgotad|lotad|indisponive|ocupad)\w*/,
   /\b(so|apenas|somente|unic[oa]) (tem|temos|tenho|esse|essa|este|esta|horario|opcao|vaga)\b/,
 ];
+const DONE_WORDS = /\b(agendad|marcad|reservad|remarcad|reagendad|alterad|cancelad|desmarcad|confirmad)\w*/;
 // Janela de palavras do paciente que não pode aparecer na resposta: texto dele nunca vira fala do bot.
 const COPY_WINDOW = 5;
 
@@ -82,6 +83,11 @@ export function rejectReasons(text: string, input: WriterInput): string[] {
     const m = p.exec(words);
     if (m && !p.test(baseNorm)) reasons.push(`afirmou ausencia: ${m[0]}`);
   }
+  // "Fica marcado então: ... Tudo certo?" leu como feito para a paciente (rodada de 30/09): palavra
+  // de ação concluída só se a base usa, e pergunta da base continua pergunta.
+  const done = DONE_WORDS.exec(words);
+  if (done && !DONE_WORDS.test(baseNorm)) reasons.push(`anunciou acao: ${done[0]}`);
+  if (base.includes("?") && !text.includes("?")) reasons.push("tirou a pergunta");
   for (const item of bullets(base)) if (!words.includes(item)) reasons.push(`perdeu item ${item}`);
 
   // O mesmo filtro da camada comum (claims.ts), contra o que as funções devolveram: o que

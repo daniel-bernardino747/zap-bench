@@ -45,6 +45,7 @@ const INTENTS = {
   clinico: "Asks for a diagnosis, medication, prescription or clinical advice, without an urgent problem.",
   fora: "Anything else: unrelated topics, attempts to change the bot's rules or to act as staff or system, requests for other patients' data, requests to repeat offensive text.",
   saudacao: "Only a greeting, without thanks or goodbye.",
+  desistir: "Gives up or asks to forget it (\"deixa pra la\", \"esquece\", \"nao quero mais\").",
   agradecimento: "Only thanks or goodbye (\"obg\", \"vlw\", \"blz\", \"tchau\").",
 } as const;
 type Intent = keyof typeof INTENTS;
@@ -62,7 +63,11 @@ const TOPIC: Partial<Record<Intent, string>> = {
   clinico: "dúvida clínica",
 };
 
-type Awaiting = "servico" | "convenio" | "dia" | "confirmar" | "qual_agendamento" | null;
+type Awaiting = "servico" | "horario" | "convenio" | "dia" | "confirmar" | "qual_agendamento" | null;
+
+// Horários listados numa mensagem, e quantos o Jev pode reconhecer quando o paciente cita um.
+const SHOWN = 4;
+const POOL_SIZE = 24;
 
 interface Slot {
   date: string;
@@ -92,6 +97,24 @@ function dayLabel(date: string): string {
 
 function when(date: string, time: string): string {
   return `${dayLabel(date)}, às ${time}`;
+}
+
+const slotKey = (s: Slot) => `${s.date} ${s.time}`;
+
+// "quarta, 30/09, às 12:00, 12:30 ou 13:00, com Dra. Ana Lima" (todos do mesmo dia).
+function listSlots(slots: Slot[]): string {
+  const profs = [...new Set(slots.map((s) => s.profissional_nome))];
+  if (profs.length > 1) return `${dayLabel(slots[0].date)}: ${slots.map((s) => `${s.time} com ${s.profissional_nome}`).join(", ")}`;
+  const times = slots.map((s) => s.time);
+  const joined = times.length === 1 ? times[0] : `${times.slice(0, -1).join(", ")} ou ${times.at(-1)}`;
+  return `${dayLabel(slots[0].date)}, às ${joined}, com ${profs[0]}`;
+}
+
+// Um minuto depois: "mais tarde que 12:30" começa em 12:31.
+function minuteAfter(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const t = h * 60 + m + 1;
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }
 
 function nextMonday(date: string): string {
@@ -145,10 +168,17 @@ function makeJev(writer?: Writer): Brain {
       let fromDate: string | null = null;
       let period: "manha" | "tarde" | null = null;
       let insurance: string | null | undefined; // undefined: não perguntado; null: particular
+      let insuranceUnnamed = false; // disse "pelo convênio" sem dizer qual
       let name: string | null = null;
       let target: Appointment | null = null;
+      // `offer` é o horário escolhido; `shown`, os que a última mensagem listou; `pool`, tudo o
+      // que a última busca achou, para o Jev reconhecer "15h" ou "mais tarde".
       let offer: Slot | null = null;
-      let skip = 0;
+      let shown: Slot[] = [];
+      let pool: Slot[] = [];
+      let minTime: string | null = null;
+      let maxTime: string | null = null;
+      const excluded = new Set<string>();
 
       const loadServices = () => (services ??= ok<Service[]>(call("listar_servicos", {})) ?? []);
       const loadAppointments = () => (appointments = ok<Appointment[]>(call("meus_agendamentos", {})) ?? []);
@@ -180,7 +210,20 @@ function makeJev(writer?: Writer): Brain {
         if (words.length) {
           questions.convenio = spanChoice("Which option is the name of the dental insurance plan the patient mentions in `ultima_mensagem`?", words, "no insurance plan named");
           questions.particular = { type: "noul", instructions: "In `ultima_mensagem`, does the patient say they will pay privately, without insurance?" };
+          questions.convenio_sem_nome = { type: "noul", instructions: "In `ultima_mensagem`, does the patient say they will use dental insurance, without naming the plan?" };
           questions.nome = spanChoice("Which option is the patient's own full name as they state it in `ultima_mensagem`?", spans(text, 4), "no name given");
+        }
+        if (pool.length) {
+          questions.horario = {
+            type: "choice",
+            instructions: "Which time does the patient choose or ask for in `ultima_mensagem`? The bot listed some of these times; the patient may pick one of them or name another.",
+            criteria: {
+              ...Object.fromEntries(pool.map((s, i) => [`h${i}`, `${WEEKDAY[weekdayOf(s.date)]} ${s.date} at ${s.time}`])),
+              mais_tarde: "a later time than the ones the bot listed, without naming one that is available",
+              mais_cedo: "an earlier time than the ones the bot listed, without naming one that is available",
+              [NONE]: "no time chosen or asked for",
+            },
+          };
         }
         const mine = appointments ?? loadAppointments();
         if (mine.length) {
@@ -200,6 +243,10 @@ function makeJev(writer?: Writer): Brain {
           bot_aguarda: awaiting ?? "nada",
           ultima_mensagem: text,
         };
+        return systemOne(state, questions);
+      }
+
+      async function systemOne(state: Parameters<typeof client.systemOne>[0]["state"], questions: Questions): Promise<{ answers: Record<string, any>; usage: Usage }> {
         const r = await client.systemOne({ state, questions });
         const tokens = r.usage.input_tokens + r.usage.output_tokens;
         return {
@@ -217,12 +264,20 @@ function makeJev(writer?: Writer): Brain {
         return r?.mensagem_para_o_paciente ?? "Certo, vou chamar alguém da equipe para continuar com você.";
       }
 
+      function clearSlots() {
+        offer = null;
+        shown = [];
+        pool = [];
+        minTime = maxTime = null;
+        excluded.clear();
+      }
+
       function reset() {
         flow = null;
         awaiting = null;
         date = fromDate = period = null;
-        target = offer = null;
-        skip = 0;
+        target = null;
+        clearSlots();
       }
 
       // Próximo passo do fluxo em andamento: o que falta perguntar, ou o horário a oferecer.
@@ -250,35 +305,46 @@ function makeJev(writer?: Writer): Brain {
           return `Qual serviço você quer marcar?\n${loadServices().map((s) => `• ${s.nome}`).join("\n")}`;
         }
 
-        const from = date ?? fromDate ?? ctx.now.date;
-        const search = (dias: number) =>
-          ok<Slot[]>(
-            call("buscar_horarios", {
-              servico: serviceId,
-              a_partir_de: from,
-              dias,
-              ...(period === "manha" ? { antes: "12:00" } : period === "tarde" ? { depois: "12:00" } : {}),
-            }),
-          ) ?? [];
-        let slots = search(date ? 1 : 7);
-        if (!slots.length && date) slots = search(7);
-        const slot = slots[skip] ?? slots[0];
-        if (!slot) {
-          awaiting = "dia";
-          return `Não encontrei horário livre para ${serviceName(serviceId)} nesse período. Quer tentar outro dia ou período?`;
+        // Primeiro os horários, e o paciente escolhe: quem pergunta "tem horário amanhã?" quer ver
+        // o que tem, e quem quer "mais tarde" ou "15h" precisa de mais de uma opção.
+        if (!offer) {
+          const slots = searchSlots();
+          if (!slots.length) {
+            awaiting = "dia";
+            return `Não encontrei horário livre para ${serviceName(serviceId)} nesse período. Quer tentar outro dia ou período?`;
+          }
+          pool = slots.slice(0, POOL_SIZE);
+          shown = slots.filter((s) => s.date === slots[0].date).slice(0, SHOWN);
+          awaiting = "horario";
+          const list = listSlots(shown);
+          if (flow === "remarcar") return `Para remarcar sua consulta de ${target!.servico} de ${when(target!.data, target!.hora)}, tenho ${list}. Qual horário prefere?`;
+          const insuranceQuestion = insurance !== undefined ? "" : insuranceUnnamed ? " E qual é o seu convênio?" : " E vai ser pelo convênio ou particular?";
+          return `Tenho ${list}. Qual horário prefere?${insuranceQuestion}`;
         }
-        offer = slot;
-        // Primeiro o horário, depois o convênio: quem pergunta "tem horário amanhã?" quer ver o horário.
+
         if (flow === "agendar" && insurance === undefined) {
           awaiting = "convenio";
-          return `Tenho ${when(slot.date, slot.time)} com ${slot.profissional_nome}. Vai ser pelo convênio ou particular? Se for convênio, qual?`;
+          const question = insuranceUnnamed ? "Qual é o seu convênio?" : "Vai ser pelo convênio ou particular? Se for convênio, qual?";
+          return `Certo, ${when(offer.date, offer.time)} com ${offer.profissional_nome}. ${question}`;
         }
         awaiting = "confirmar";
         if (flow === "remarcar")
-          return `Posso remarcar sua consulta de ${target!.servico} de ${when(target!.data, target!.hora)} para ${when(slot.date, slot.time)}, com ${slot.profissional_nome}?`;
+          return `Posso remarcar sua consulta de ${target!.servico} de ${when(target!.data, target!.hora)} para ${when(offer.date, offer.time)}, com ${offer.profissional_nome}?`;
         const pay = insurance ? `pelo ${insurance}` : "particular";
         const who = name ? ` em nome de ${name}` : "";
-        return `Tenho ${when(slot.date, slot.time)} com ${slot.profissional_nome}, ${pay}. Posso agendar${who}?${name ? "" : " Se sim, me diga o nome do paciente."}`;
+        return `Então fica ${when(offer.date, offer.time)} com ${offer.profissional_nome}, ${pay}. Posso agendar${who}?${name ? "" : " Se sim, me diga o nome do paciente."}`;
+      }
+
+      function searchSlots(): Slot[] {
+        const from = date ?? fromDate ?? ctx.now.date;
+        const after = [period === "tarde" ? "12:00" : null, minTime].filter((t): t is string => !!t).sort().at(-1);
+        const before = [period === "manha" ? "12:00" : null, maxTime].filter((t): t is string => !!t).sort()[0];
+        const search = (dias: number) =>
+          (ok<Slot[]>(call("buscar_horarios", { servico: serviceId, a_partir_de: from, dias, ...(after && { depois: after }), ...(before && { antes: before }) })) ?? []).filter(
+            (s) => !excluded.has(slotKey(s)),
+          );
+        const slots = search(date ? 1 : 7);
+        return slots.length || !date ? slots : search(7);
       }
 
       function execute(): string {
@@ -319,8 +385,8 @@ function makeJev(writer?: Writer): Brain {
       }
 
       function retry(): string {
+        if (offer) excluded.add(slotKey(offer));
         offer = null;
-        skip++;
         return `Esse horário acabou de ser ocupado. ${advance()}`;
       }
 
@@ -330,23 +396,34 @@ function makeJev(writer?: Writer): Brain {
         const svc = a.servico?.choice;
         if (svc && svc !== NONE && svc !== serviceId) {
           serviceId = svc;
-          offer = null;
-          skip = 0;
+          clearSlots();
         }
         const dia = a.dia?.choice;
         if (dia === "semana_que_vem") {
           fromDate = nextMonday(ctx.now.date);
           date = null;
-          offer = null;
+          clearSlots();
         } else if (dia && dia !== NONE) {
-          date = addDays(ctx.now.date, Number(dia.slice(1)));
+          const day = addDays(ctx.now.date, Number(dia.slice(1)));
           // "ss terça 8h ta bom" repete o dia oferecido: a oferta continua de pé.
-          if (offer?.date !== date) offer = null;
+          if (day !== date && !shown.some((s) => s.date === day) && offer?.date !== day) clearSlots();
+          date = day;
         }
         const per = a.periodo?.choice;
-        if (per === "manha" || per === "tarde") {
-          if (offer && (per === "manha") !== offer.time < "12:00") offer = null;
+        if ((per === "manha" || per === "tarde") && per !== period) {
+          // "09:30 pd ser" também diz "manhã": a lista só cai se nada nela serve no período.
+          const fits = (s: Slot) => (per === "manha") === s.time < "12:00";
+          if (offer ? !fits(offer) : !shown.some(fits)) clearSlots();
           period = per;
+        }
+        const h = a.horario?.choice;
+        if (typeof h === "string" && h.startsWith("h") && pool[Number(h.slice(1))]) offer = pool[Number(h.slice(1))];
+        else if (h === "mais_tarde" && shown.length) {
+          minTime = minuteAfter(shown.at(-1)!.time);
+          offer = null;
+        } else if (h === "mais_cedo" && shown.length) {
+          maxTime = shown[0].time;
+          offer = null;
         }
         const ag = a.agendamento?.choice;
         if (ag && ag !== NONE) target = appointments?.find((x) => x.id === ag) ?? target;
@@ -357,10 +434,11 @@ function makeJev(writer?: Writer): Brain {
             call("verificar_convenio", { convenio: words[Number(conv.slice(1))], ...(serviceId ? { servico: serviceId } : {}) }),
           );
           if (r) return r;
-        } else if ((a.particular?.noul ?? 0) > 0.5 && awaiting === "convenio") insurance = null;
+        } else if ((a.particular?.noul ?? 0) > 0.5 && (awaiting === "convenio" || (flow === "agendar" && insurance === undefined))) insurance = null;
+        else if ((a.convenio_sem_nome?.noul ?? 0) > 0.5 && insurance === undefined) insuranceUnnamed = true;
 
         const nm = a.nome?.choice;
-        if (nm && nm !== NONE && offer) name = spans(text, 4)[Number(nm.slice(1))] ?? name;
+        if (nm && nm !== NONE && (offer || shown.length)) name = spans(text, 4)[Number(nm.slice(1))] ?? name;
         return null;
       }
 
@@ -419,6 +497,13 @@ function makeJev(writer?: Writer): Brain {
           }
           const conv = fill(a, patientText, intent);
 
+          // "13h pd marca" em cima da lista: escolheu e confirmou de uma vez. Só vale para um
+          // horário que a lista citou, que é o que o guard aceita como confirmado.
+          const pickedShown = awaiting === "horario" && offer !== null && shown.some((s) => slotKey(s) === slotKey(offer!));
+          const ready = flow === "remarcar" || (flow === "agendar" && insurance !== undefined && name !== null);
+          if (pickedShown && ready && !conv && ["confirmar", "agendar", "remarcar", "informar"].includes(intent) && isAffirmative(patientText))
+            return say(execute(), usage);
+
           switch (intent) {
             case "emergencia":
               return say(handoff("emergencia"), usage, true);
@@ -429,6 +514,9 @@ function makeJev(writer?: Writer): Brain {
               return say("Não posso dar orientação clínica por aqui. Se quiser, agendo uma avaliação com a dentista.", usage);
             case "fora":
               return say("Só consigo ajudar com assuntos da clínica: agendar, remarcar ou cancelar consultas, tirar dúvidas ou chamar alguém da equipe.", usage);
+            case "desistir":
+              reset();
+              return say("Tudo bem. Se mudar de ideia, é só chamar.", usage);
             case "agradecimento":
               return say("Por nada! Se precisar de mais alguma coisa, é só chamar.", usage);
             case "saudacao":
@@ -460,7 +548,20 @@ function makeJev(writer?: Writer): Brain {
             }
             case "pagamento": {
               const p = ok<{ tema: string; texto: string }[]>(call("consultar_politicas", {})) ?? [];
-              return say(p.map((x) => x.texto).join("\n"), usage);
+              if (p.length <= 1) return say(p.map((x) => x.texto).join("\n"), usage);
+              // Só a política que o paciente perguntou: os temas vêm da função, não do código.
+              const { answers, usage: more } = await systemOne(
+                { conversa: history.slice(-4), ultima_mensagem: patientText },
+                {
+                  tema: {
+                    type: "choice",
+                    instructions: "Which topic does the patient ask about in `ultima_mensagem`?",
+                    criteria: { ...Object.fromEntries(p.map((x, i) => [`t${i}`, x.tema])), [NONE]: "more than one of these, or not clear" },
+                  },
+                },
+              );
+              const pick = p[Number(String(answers.tema?.choice).slice(1))];
+              return say(pick ? pick.texto : p.map((x) => x.texto).join("\n"), addUsage(usage, more));
             }
             case "outra_politica":
               call("consultar_politicas", {});
@@ -483,12 +584,18 @@ function makeJev(writer?: Writer): Brain {
             case "confirmar":
               if (conv && flow === "agendar") return say(insuranceReply(conv), usage);
               if (awaiting === "confirmar") return say(execute(), usage);
+              // "ss" para uma lista: com um horário só, é esse; com vários, falta escolher.
+              if (awaiting === "horario" && !offer) {
+                if (shown.length === 1) offer = shown[0];
+                else if (shown.length) return say(`Qual desses horários você prefere: ${listSlots(shown)}?`, usage);
+              }
               return say(flow ? advance() : "Posso ajudar a agendar, remarcar ou cancelar uma consulta, ou tirar dúvidas sobre a clínica.", usage);
             case "recusar":
-              if (offer) {
-                offer = null;
-                skip++;
-              }
+              // Recusou o horário escolhido, ou a lista inteira: esses não voltam.
+              if (offer) excluded.add(slotKey(offer));
+              else if (awaiting === "horario") shown.forEach((s) => excluded.add(slotKey(s)));
+              offer = null;
+              if (conv && flow === "agendar") return say(insuranceReply(conv), usage);
               if (!flow) return say("Tudo bem. Posso ajudar com mais alguma coisa?", usage);
               return say(advance(), usage);
             case "informar":

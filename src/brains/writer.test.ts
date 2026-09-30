@@ -52,6 +52,14 @@ describe("checagem do redator", () => {
     );
   });
 
+  it("recusa transformar a pergunta de confirmação em algo que soa feito (visto na rodada de 30/09)", () => {
+    const ask = { ...offer, base: "Então fica quarta, 30/09, às 14:00 com Dra. Ana Lima, particular. Posso agendar em nome de Paula Mendes?" };
+    const reasons = rejectReasons("Fica marcado então: quarta, 30/09, às 14:00 com a Dra. Ana Lima, particular. Tudo certo?", ask);
+    expect(reasons).toContain("anunciou acao: marcado");
+    expect(rejectReasons("Quarta, 30/09, às 14:00 com a Dra. Ana Lima, particular, no nome da Paula Mendes.", ask)).toContain("tirou a pergunta");
+    expect(rejectReasons("Posso agendar quarta, 30/09, às 14:00 com a Dra. Ana Lima, particular, pra Paula Mendes?", ask)).toEqual([]);
+  });
+
   it("recusa perder um item de lista", () => {
     const list = { ...offer, base: "Qual consulta?\n• Limpeza (profilaxia): quarta, 30/09, às 10:00\n• Restauração: sexta, 02/10, às 14:00" };
     expect(rejectReasons("Claro! Qual delas? A limpeza de quarta, 30/09, às 10:00?", list)).toEqual(
