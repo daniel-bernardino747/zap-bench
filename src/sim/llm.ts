@@ -123,6 +123,16 @@ function openAICompatibleChat(c: { model: string; baseURL: string; apiKey: strin
   };
 }
 
+// Às vezes o modelo continua a conversa pelo outro lado ("user Confirmando: remarcada..."):
+// dali em diante não é o paciente falando, e não pode chegar ao bot.
+const ROLE_LINE = /^(user|assistant|human|atendente|bot)\b\s*:?/i;
+
+export function ownPart(text: string): string {
+  const lines = text.split("\n");
+  const cut = lines.findIndex((l) => ROLE_LINE.test(l.trim()));
+  return (cut < 0 ? lines : lines.slice(0, cut)).join("\n").trim();
+}
+
 function systemPrompt(s: ConversationScenario, persona: Persona): string {
   const p = personas[persona] as { descricao: string; exemplos: string[]; regras?: string[]; desiste: string | null };
   return [
@@ -157,7 +167,7 @@ export function llmPatient(c: SimConfig): Patient {
           turns.push({ role: "user", content: botReplies.join("\n\n") || "(o atendimento não respondeu)" });
           const r = await chat(system, turns);
           // Modelos com raciocínio às vezes devolvem o raciocínio junto: fica só o que vem depois.
-          const text = r.text.replace(/<(think|thought)>[\s\S]*?(<\/(think|thought)>|$)/g, "").trim();
+          const text = ownPart(r.text.replace(/<(think|thought)>[\s\S]*?(<\/(think|thought)>|$)/g, "").trim());
           turns.push({ role: "assistant", content: text || "?" });
           const lines = text
             .split("\n")
