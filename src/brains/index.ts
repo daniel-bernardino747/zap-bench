@@ -1,4 +1,5 @@
 import { claudeBrain } from "./claude.ts";
+import { gptBrain } from "./gpt.ts";
 import { jevBrain } from "./jev.ts";
 import { rulesBrain } from "./rules.ts";
 import type { Brain } from "./types.ts";
@@ -16,12 +17,12 @@ export const BRAINS: Entry[] = [
   { id: "regras", create: () => rulesBrain },
   { id: "sonnet", env: "ANTHROPIC_API_KEY", create: () => claudeBrain("sonnet", "Claude Sonnet 5", "claude-sonnet-5") },
   { id: "haiku", env: "ANTHROPIC_API_KEY", create: () => claudeBrain("haiku", "Claude Haiku 4.5", "claude-haiku-4-5") },
-  { id: "gpt", env: "OPENAI_API_KEY" },
+  { id: "gpt", env: "OPENAI_API_KEY", create: () => gptBrain("gpt", "GPT-6 Astra", "gpt-6-astra") },
   { id: "jev", env: "TYPESAFE_API_KEY", create: () => jevBrain },
 ];
 
 // Modelos que estão na comparação: o paciente simulado e o juiz nunca podem ser um deles (ADR-0010).
-export const BRAIN_MODELS = ["claude-sonnet-5", "claude-haiku-4-5", "jev-1.13.0"];
+export const BRAIN_MODELS = ["claude-sonnet-5", "claude-haiku-4-5", "gpt-6-astra", "jev-1.13.0"];
 
 export function resolveBrains(ids: string[], env: NodeJS.ProcessEnv): { brains: Brain[]; skipped: string[] } {
   const brains: Brain[] = [];

@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { performance } from "node:perf_hooks";
 import type { Brain, Usage } from "../brains/types.ts";
 import { addUsage, NO_USAGE } from "../brains/types.ts";
@@ -9,6 +10,13 @@ import { createToolContext, type ToolResult } from "../domain/tools.ts";
 import { PatientUnavailableError, type Patient, type Persona } from "../sim/patient.ts";
 import { parseNow, PATIENT_PHONE, type ConversationScenario, type SingleTurnScenario, type Split } from "../scenarios/schema.ts";
 import { evaluateConversation, evaluateSingleTurn, type Check, type Observed } from "./evaluate.ts";
+
+// Chave recusada é configuração, não desempenho: para a rodada em vez de gravar cada execução
+// como erro do cérebro (e pagar por elas).
+function rethrowIfAuth(e: unknown): void {
+  if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) throw e;
+  if (e instanceof Error && /HTTP 40[13]\b/.test(e.message)) throw e;
+}
 
 // Roda um cenário com um cérebro e grava tudo que aconteceu. Buffer, eventos da recepção,
 // entrega duplicada e guard ficam aqui, iguais para todos os cérebros.
@@ -167,6 +175,7 @@ export async function runSingleTurn(
     }
     if (env.ctx.handoff) outcome = "handoff";
   } catch (e) {
+    rethrowIfAuth(e);
     outcome = "erro";
     error = String((e as Error)?.message ?? e);
   }
@@ -280,6 +289,7 @@ export async function runConversation(
       incoming = p.messages.length ? p.messages : ["?"];
     }
   } catch (e) {
+    rethrowIfAuth(e);
     outcome = e instanceof PatientUnavailableError ? "paciente_indisponivel" : "erro";
     error = String((e as Error)?.message ?? e);
   }

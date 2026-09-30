@@ -156,6 +156,21 @@ describe("conversa", () => {
     expect(summarize([r, ok])[0]).toMatchObject({ runs: 1, conversationPassRate: 1, patientUnavailable: 1 });
   });
 
+  it("chave recusada para a rodada, sem gravar como erro do cérebro", async () => {
+    const denied: Patient = {
+      id: "negado",
+      model: "negado",
+      start: () => ({
+        reply: async () => {
+          throw new Error("gpt: HTTP 401 invalid_api_key");
+        },
+      }),
+    };
+    await expect(
+      runConversation(clinic, conversation(agendar), scripted(confirmThenBook), denied, { mode: "guardrails", persona: "padrao", repeat: 1 }),
+    ).rejects.toThrow("HTTP 401");
+  });
+
   it("entrega duplicada: o cérebro vê cada mensagem uma vez só", async () => {
     const brain = scripted(confirmThenBook);
     const r = await runConversation(clinic, conversation({ ...agendar, entrega_duplicada: true }), brain, patient([["sim"], ["[FIM]"]]), {

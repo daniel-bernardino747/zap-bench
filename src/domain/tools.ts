@@ -329,10 +329,19 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
+// Sem `pattern`: a OpenAI recusa regex Unicode (\p{L}). A validação continua inteira no zod de
+// cada ferramenta, e todos os cérebros LLM recebem o mesmo schema.
+function withoutPatterns(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutPatterns);
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).filter(([k]) => k !== "pattern").map(([k, v]) => [k, withoutPatterns(v)]));
+  return value;
+}
+
 export function toolSchemas() {
   return tools.map((t) => ({
     name: t.name,
     description: t.description,
-    inputSchema: z.toJSONSchema(t.input),
+    inputSchema: withoutPatterns(z.toJSONSchema(t.input)),
   }));
 }
