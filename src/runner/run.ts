@@ -11,11 +11,14 @@ import { PatientUnavailableError, type Patient, type PatientEnd, type Persona } 
 import { parseNow, PATIENT_PHONE, type ConversationScenario, type SingleTurnScenario, type Split } from "../scenarios/schema.ts";
 import { evaluateConversation, evaluateSingleTurn, type Check, type Observed } from "./evaluate.ts";
 
-// Chave recusada é configuração, não desempenho: para a rodada em vez de gravar cada execução
-// como erro do cérebro (e pagar por elas).
+// Chave recusada ou conta sem crédito é configuração, não desempenho: para a rodada em vez de
+// gravar cada execução como erro do cérebro (e pagar pelas outras). Na validation de 30/09 o
+// crédito da Anthropic acabou e 200 execuções viraram "erro" antes de alguém ver.
+const NO_CREDIT = /credit balance is too low|insufficient_quota|billing/i;
+
 function rethrowIfAuth(e: unknown): void {
   if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) throw e;
-  if (e instanceof Error && /HTTP 40[13]\b/.test(e.message)) throw e;
+  if (e instanceof Error && (/HTTP 40[13]\b/.test(e.message) || NO_CREDIT.test(e.message))) throw e;
 }
 
 // Roda um cenário com um cérebro e grava tudo que aconteceu. Buffer, eventos da recepção,

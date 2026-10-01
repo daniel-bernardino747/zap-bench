@@ -181,6 +181,21 @@ describe("conversa", () => {
     ).rejects.toThrow("HTTP 401");
   });
 
+  it("conta sem crédito também para a rodada (validation de 30/09)", async () => {
+    const broke: Patient = {
+      id: "sem-credito",
+      model: "sem-credito",
+      start: () => ({
+        reply: async () => {
+          throw new Error('400 {"type":"error","error":{"message":"Your credit balance is too low to access the Anthropic API."}}');
+        },
+      }),
+    };
+    await expect(
+      runConversation(clinic, conversation(agendar), scripted(confirmThenBook), broke, { mode: "guardrails", persona: "padrao", repeat: 1 }),
+    ).rejects.toThrow(/credit balance/);
+  });
+
   it("entrega duplicada: o cérebro vê cada mensagem uma vez só", async () => {
     const brain = scripted(confirmThenBook);
     const r = await runConversation(clinic, conversation({ ...agendar, entrega_duplicada: true }), brain, patient([["sim"], ["[FIM]"]]), {
